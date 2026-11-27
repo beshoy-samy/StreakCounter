@@ -4,6 +4,7 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import java.io.IOException
 import java.security.GeneralSecurityException
+import java.security.InvalidKeyException
 import java.security.KeyStore
 import java.security.ProviderException
 import javax.crypto.Cipher
@@ -21,7 +22,7 @@ class KeystoreAead(private val alias: String = DEFAULT_ALIAS) : Aead {
 
     override fun encrypt(plaintext: ByteArray, associatedData: ByteArray): ByteArray {
         val cipher = Cipher.getInstance(TRANSFORMATION)
-        cipher.init(Cipher.ENCRYPT_MODE, key())
+        initKeystoreCipher { cipher.init(Cipher.ENCRYPT_MODE, key()) }
         cipher.updateAAD(associatedData)
         val sealed = cipher.doFinal(plaintext)
         val nonce = cipher.iv
@@ -32,9 +33,25 @@ class KeystoreAead(private val alias: String = DEFAULT_ALIAS) : Aead {
     override fun decrypt(ciphertext: ByteArray, associatedData: ByteArray): ByteArray {
         if (ciphertext.size < Aead.NONCE_SIZE + Aead.TAG_SIZE) throw GeneralSecurityException("Ciphertext too short")
         val cipher = Cipher.getInstance(TRANSFORMATION)
-        cipher.init(Cipher.DECRYPT_MODE, key(), GCMParameterSpec(TAG_BITS, ciphertext, 0, Aead.NONCE_SIZE))
+        initKeystoreCipher { cipher.init(Cipher.DECRYPT_MODE, key(), GCMParameterSpec(TAG_BITS, ciphertext, 0, Aead.NONCE_SIZE)) }
         cipher.updateAAD(associatedData)
         return cipher.doFinal(ciphertext, Aead.NONCE_SIZE, ciphertext.size - Aead.NONCE_SIZE)
+    }
+
+    /**
+     * `Cipher.init` talks to the Keystore daemon; on some devices it fails after a reboot or an OS
+     * update ("Keystore operation failed") with ProviderException or InvalidKeyException. That is
+     * key access, not a bad file. Only `init` is wrapped: a tag failure (AEADBadTagException) comes
+     * from `doFinal` and stays an ordinary decrypt failure (corruption).
+     */
+    private inline fun initKeystoreCipher(init: () -> Unit) {
+        try {
+            init()
+        } catch (e: InvalidKeyException) {
+            throw KeyUnavailableException(e)
+        } catch (e: ProviderException) {
+            throw KeyUnavailableException(e)
+        }
     }
 
     /**

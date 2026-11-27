@@ -10,6 +10,7 @@ import com.streakcounter.feature.streaks.domain.StreakRepository
 import com.streakcounter.feature.streaks.domain.applyCommand
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.transformWhile
 import kotlin.uuid.Uuid
 
 /**
@@ -17,7 +18,8 @@ import kotlin.uuid.Uuid
  * Restore at snapshot.position, execute returns the before-snapshot).
  *
  * Set [shouldReturnError] to make [execute] and [startFresh] fail without changing anything (like
- * a failed write: the stored list stays). Use [emitReadError] to make [streaks] emit an error.
+ * a failed write: the stored list stays). Use [emitReadError] to make [streaks] emit an error;
+ * like the real flow, a collection ends after an error, so retrying means collecting again.
  */
 class FakeStreakRepository(
     private val today: Today,
@@ -28,7 +30,11 @@ class FakeStreakRepository(
     var shouldReturnError: DataError.Local? = null
 
     private val state = MutableStateFlow<Result<List<Streak>, DataError.Local>>(Result.Success(initial))
-    override val streaks: Flow<Result<List<Streak>, DataError.Local>> = state
+    /** Like the real repository, each collection ends after emitting an error: retry = collect again. */
+    override val streaks: Flow<Result<List<Streak>, DataError.Local>> = state.transformWhile { value ->
+        emit(value)
+        value !is Result.Error
+    }
 
     private val _executed = mutableListOf<StreakCommand>()
 
@@ -62,10 +68,15 @@ class FakeStreakRepository(
         return Result.Success(outcome.before)
     }
 
+    /** Real semantics: only an UNREADABLE list is emptied; a readable one is left alone; other errors change nothing. */
     override suspend fun startFresh(): EmptyResult<DataError.Local> {
         startFreshCalls++
         shouldReturnError?.let { return Result.Error(it) }
-        state.value = Result.Success(emptyList())
+        val value = state.value
+        if (value is Result.Error) {
+            if (value.error != DataError.Local.UNREADABLE) return Result.Error(value.error)
+            state.value = Result.Success(emptyList())
+        }
         return Result.Success(Unit)
     }
 }

@@ -301,14 +301,28 @@ class DataStoreStreakRepositoryTest {
     }
 
     @Test
-    fun startFresh_on_a_readable_file_also_clears_the_cached_list() = runTest {
+    fun startFresh_on_a_readable_file_changes_nothing() = runTest {
         val repository = repository()
         repository.create(new("Gym"))
+        val onDisk = fileBytes()
 
-        repository.startFresh()
+        assertThat(repository.startFresh()).isEqualTo(Result.Success(Unit))
 
-        assertThat(repository.list()).isEqualTo(emptyList())
-        assertThat(readFileDirectly().streaks).isEqualTo(emptyList())
+        assertThat(fileBytes().toList()).isEqualTo(onDisk.toList())
+        assertThat(repository.list().map { it.name }).containsExactly("Gym")
+    }
+
+    @Test
+    fun other_encrypt_failure_returns_WRITE_FAILED_and_leaves_the_file() = runTest {
+        val repository = repository()
+        val id = repository.create(new("Gym"))
+        val onDisk = fileBytes()
+        aead.encryptFailure = IllegalStateException("provider broke")
+
+        assertThat(repository.execute(StreakCommand.Increment(id)))
+            .isEqualTo(Result.Error(DataError.Local.WRITE_FAILED))
+        assertThat(fileBytes().toList()).isEqualTo(onDisk.toList())
+        assertThat(repository.list().single().count).isEqualTo(0)
     }
 
     @Test

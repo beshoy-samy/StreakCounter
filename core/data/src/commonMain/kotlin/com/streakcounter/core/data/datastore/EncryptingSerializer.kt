@@ -8,6 +8,7 @@ import kotlinx.coroutines.CancellationException
 import okio.Buffer
 import okio.BufferedSink
 import okio.BufferedSource
+import okio.IOException
 
 /** First byte of every encrypted file. Bump it when the envelope layout changes. */
 const val ENVELOPE_VERSION: Byte = 1
@@ -24,6 +25,7 @@ const val ENVELOPE_VERSION: Byte = 1
  *
  * [KeyUnavailableException] from [aead] passes through unchanged: a missing key says nothing about
  * the file, so it must not look like corruption (which offers "Start fresh" and deletes the file).
+ * Any other encrypt failure becomes a plain IOException (a failed write), never a crash.
  */
 class EncryptingSerializer<T>(
     private val delegate: OkioSerializer<T>,
@@ -66,7 +68,17 @@ class EncryptingSerializer<T>(
     override suspend fun writeTo(t: T, sink: BufferedSink) {
         val plaintext = Buffer().also { delegate.writeTo(t, it) }.readByteArray()
         try {
-            val sealed = aead.encrypt(plaintext, boundAssociatedData)
+            val sealed = try {
+                aead.encrypt(plaintext, boundAssociatedData)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: KeyUnavailableException) {
+                throw e
+            } catch (e: Exception) {
+                // A failed write, not corruption: DataStore keeps the old file and the caller
+                // reports WRITE_FAILED instead of crashing. No cause, like the read path.
+                throw IOException("Could not encrypt file (${e.typeName()})")
+            }
             sink.writeByte(ENVELOPE_VERSION.toInt())
             sink.write(sealed)
         } finally {

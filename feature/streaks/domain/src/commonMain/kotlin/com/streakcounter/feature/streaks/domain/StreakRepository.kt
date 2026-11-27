@@ -21,8 +21,9 @@ interface StreakRepository {
     suspend fun execute(command: StreakCommand): Result<Streak?, DataError.Local>
 
     /**
-     * The explicit "Start fresh" on an unreadable file: deletes it, so the list reads as empty.
-     * Never deletes when the key is unavailable (returns KEY_UNAVAILABLE).
+     * The explicit "Start fresh" on an unreadable file: deletes only a file that fails with
+     * UNREADABLE, so the list reads as empty. A file that reads fine is left unchanged (Success).
+     * Never deletes on KEY_UNAVAILABLE or UNKNOWN (returns that error).
      */
     suspend fun startFresh(): EmptyResult<DataError.Local>
 }

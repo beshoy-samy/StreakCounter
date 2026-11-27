@@ -13,6 +13,7 @@ import com.streakcounter.feature.streaks.domain.StreakRepository
 import com.streakcounter.feature.streaks.domain.applyCommand
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import okio.FileSystem
 import okio.Path
@@ -61,23 +62,28 @@ class DataStoreStreakRepository(
     }
 
     /**
-     * Empties the store.
+     * "Start fresh" for a file that can't be read. Writes nothing itself.
      *
-     * A readable file is emptied through DataStore, so its cached copy follows (deleting the file
-     * behind DataStore's back would leave the cached list on screen and let the next write bring
-     * it back). Only a file that fails with CorruptionException is deleted; DataStore then reads
-     * the missing file as empty. An unavailable key fails with KEY_UNAVAILABLE and deletes nothing:
-     * the file may be fine once the key is back.
+     * - The file reads fine: changes nothing and succeeds (the caller re-subscribes and shows the
+     *   list). Good data is never wiped, even if the screen was stale.
+     * - CorruptionException: deletes the file. DataStore re-reads the missing file as empty.
+     * - Unavailable key or another read failure: deletes nothing; the file may be fine.
      */
-    override suspend fun startFresh(): EmptyResult<DataError.Local> = try {
+    override suspend fun startFresh(): EmptyResult<DataError.Local> {
         try {
-            dataStore.updateData { StreakFile() }
+            dataStore.data.first()
+            return Result.Success(Unit)
         } catch (e: CorruptionException) {
-            fileSystem.delete(path, mustExist = false)
+            // Unreadable: the only case that deletes.
+        } catch (e: Exception) {
+            return Result.Error(e.toReadError() ?: throw e)
         }
-        Result.Success(Unit)
-    } catch (e: Exception) {
-        Result.Error(e.toWriteError() ?: throw e)
+        return try {
+            fileSystem.delete(path, mustExist = false)
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            Result.Error(e.toWriteError() ?: throw e)
+        }
     }
 
     private fun Throwable.toReadError(): DataError.Local? = when (this) {

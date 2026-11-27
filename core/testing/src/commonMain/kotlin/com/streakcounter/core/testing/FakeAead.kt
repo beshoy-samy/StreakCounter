@@ -12,7 +12,8 @@ import kotlin.random.Random
  * that tampering, a wrong key or wrong associated data make [decrypt] throw.
  *
  * Set [keyUnavailable] to make both operations throw [KeyUnavailableException], like a Keystore or
- * Keychain failure on a real device.
+ * Keychain failure on a real device. Set [encryptFailure] to make only [encrypt] throw it (for
+ * example an IllegalStateException from a broken provider).
  */
 class FakeAead(
     private val key: ByteArray = DEFAULT_KEY,
@@ -21,8 +22,11 @@ class FakeAead(
 
     var keyUnavailable: Boolean = false
 
+    var encryptFailure: Exception? = null
+
     override fun encrypt(plaintext: ByteArray, associatedData: ByteArray): ByteArray {
         if (keyUnavailable) throw KeyUnavailableException()
+        encryptFailure?.let { throw it }
         val nonce = random.nextBytes(NONCE_SIZE)
         val body = xorStream(plaintext, nonce)
         return nonce + body + tag(nonce, body, associatedData)

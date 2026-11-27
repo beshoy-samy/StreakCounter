@@ -1,5 +1,6 @@
 package com.streakcounter.core.testing
 
+import app.cash.turbine.test
 import assertk.assertThat
 import assertk.assertions.containsExactly
 import assertk.assertions.isEqualTo
@@ -53,5 +54,45 @@ class FakeStreakRepositoryTest {
         repository.execute(StreakCommand.Increment(repository.current!!.single().id))
 
         assertThat(repository.current!!.single().countDate).isNotNull().isEqualTo(LocalDate(2026, 11, 28))
+    }
+
+    @Test
+    fun streaks_completes_after_an_error_like_the_real_repository() = runTest {
+        create("A")
+        repository.emitReadError(DataError.Local.UNREADABLE)
+
+        repository.streaks.test {
+            assertThat(awaitItem()).isEqualTo(Result.Error(DataError.Local.UNREADABLE))
+            awaitComplete()
+        }
+
+        // Retry = a new collection, which sees the current state.
+        repository.setStreaks(emptyList())
+        repository.streaks.test {
+            assertThat(awaitItem()).isEqualTo(Result.Success(emptyList()))
+            expectNoEvents()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun startFresh_with_key_unavailable_changes_nothing() = runTest {
+        repository.emitReadError(DataError.Local.KEY_UNAVAILABLE)
+
+        assertThat(repository.startFresh()).isEqualTo(Result.Error(DataError.Local.KEY_UNAVAILABLE))
+        assertThat(repository.current).isEqualTo(null)
+    }
+
+    @Test
+    fun startFresh_on_unreadable_empties_and_on_readable_changes_nothing() = runTest {
+        create("A")
+        val readable = repository.current
+
+        assertThat(repository.startFresh()).isEqualTo(Result.Success(Unit))
+        assertThat(repository.current).isEqualTo(readable)
+
+        repository.emitReadError(DataError.Local.UNREADABLE)
+        assertThat(repository.startFresh()).isEqualTo(Result.Success(Unit))
+        assertThat(repository.current).isEqualTo(emptyList())
     }
 }

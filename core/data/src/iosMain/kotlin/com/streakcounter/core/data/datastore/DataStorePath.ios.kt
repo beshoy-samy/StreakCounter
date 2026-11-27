@@ -21,7 +21,8 @@ import platform.Foundation.numberWithBool
  * Excluding a directory excludes everything in it.
  *
  * Why no backup: the key is in the Keychain with `ThisDeviceOnly`, so a restored copy could never
- * be decrypted and would only show the "Couldn't open your streaks" screen.
+ * be decrypted and would only show the "Couldn't open your streaks" screen. Setting the flag is
+ * best effort (see below); creating the directory is required.
  */
 @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
 fun dataStorePath(fileName: String): Path {
@@ -38,9 +39,9 @@ fun dataStorePath(fileName: String): Path {
     check(fileManager.createDirectoryAtURL(directory, withIntermediateDirectories = true, attributes = null, error = null)) {
         "Could not create the datastore directory"
     }
-    check(directory.setResourceValue(NSNumber.numberWithBool(true), forKey = NSURLIsExcludedFromBackupKey, error = null)) {
-        "Could not exclude the datastore directory from backup"
-    }
+    // Best effort: if this fails the backup holds only ciphertext whose key (ThisDeviceOnly) never
+    // leaves the device. Crashing on every launch would be worse. Tried again on every launch.
+    directory.setResourceValue(NSNumber.numberWithBool(true), forKey = NSURLIsExcludedFromBackupKey, error = null)
     val directoryPath = directory.path ?: error("datastore directory has no path")
     return directoryPath.toPath() / fileName
 }

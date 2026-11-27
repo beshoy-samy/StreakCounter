@@ -9,6 +9,7 @@ import assertk.assertFailure
 import assertk.assertThat
 import assertk.assertions.doesNotContain
 import assertk.assertions.isEqualTo
+import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotEqualTo
 import assertk.assertions.isNull
@@ -22,6 +23,7 @@ import okio.Buffer
 import okio.BufferedSink
 import okio.BufferedSource
 import okio.FileSystem
+import okio.IOException
 import okio.Path.Companion.toPath
 import kotlin.random.Random
 import kotlin.test.Test
@@ -168,6 +170,19 @@ class EncryptingSerializerTest {
         val keyed = EncryptingSerializer(StringSerializer, aead, fileName)
 
         assertFailure { keyed.encode("No smoking") }.isInstanceOf<KeyUnavailableException>()
+    }
+
+    @Test
+    fun other_encrypt_failure_becomes_IOException_not_corruption_and_has_no_content() = runTest {
+        val aead = FakeAead().apply { encryptFailure = IllegalStateException("No smoking") }
+        val keyed = EncryptingSerializer(StringSerializer, aead, fileName)
+
+        assertFailure { keyed.encode("No smoking") }.all {
+            isInstanceOf<IOException>()
+            transform { it is CorruptionException }.isFalse()
+            prop(Throwable::message).transform { it.orEmpty() }.doesNotContain("No smoking")
+            prop(Throwable::cause).isNull()
+        }
     }
 
     @Test
