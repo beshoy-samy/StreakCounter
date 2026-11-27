@@ -25,7 +25,6 @@ import androidx.compose.ui.unit.dp
 import streakcounter.core.designsystem.generated.resources.Res
 import streakcounter.core.designsystem.generated.resources.ic_add
 import streakcounter.core.designsystem.generated.resources.ic_check
-import streakcounter.core.designsystem.generated.resources.ic_check_circle
 import streakcounter.core.designsystem.generated.resources.ic_remove
 import com.streakcounter.core.designsystem.theme.ControlSize
 import com.streakcounter.core.designsystem.theme.FullShape
@@ -34,10 +33,10 @@ import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.vectorResource
 
 enum class PlusKind {
-    /** Primary pill: check icon + label. */
+    /** Primary pill: plus icon + label (design: "+ Check in"). */
     CHECK_IN,
 
-    /** Already done today: primary-container pill, check-circle icon + label. */
+    /** Already done today: primary-container pill, check icon + label. */
     DONE,
 
     /** Primary pill: plus icon + label. */
@@ -59,10 +58,10 @@ fun PlusButton(
     val content: Color
     val icon: DrawableResource
     when (kind) {
-        PlusKind.CHECK_IN -> { container = scheme.primary; content = scheme.onPrimary; icon = Res.drawable.ic_check }
+        PlusKind.CHECK_IN -> { container = scheme.primary; content = scheme.onPrimary; icon = Res.drawable.ic_add }
         PlusKind.DONE -> {
             container = scheme.primaryContainer; content = scheme.onPrimaryContainer
-            icon = Res.drawable.ic_check_circle
+            icon = Res.drawable.ic_check
         }
         PlusKind.ADD -> { container = scheme.primary; content = scheme.onPrimary; icon = Res.drawable.ic_add }
         PlusKind.QUIET -> { container = Color.Transparent; content = scheme.onSurface; icon = Res.drawable.ic_add }

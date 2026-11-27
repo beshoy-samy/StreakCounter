@@ -20,9 +20,6 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.sin
 
 /**
  * A slice of the card outline. The outline starts where the top-start corner radius ends (on the top
@@ -47,62 +44,6 @@ fun outlineSegment(progress: Float, layoutDirection: LayoutDirection): OutlineSe
     )
 }
 
-/**
- * Point on the rounded-rectangle perimeter at [fraction] (0 = top edge where the top-start radius
- * ends, clockwise in LTR, mirrored in RTL). Pure geometry, shares its walk with [outlinePath].
- */
-fun outlinePoint(
-    fraction: Float,
-    size: Size,
-    cornerRadius: Float,
-    layoutDirection: LayoutDirection,
-): Offset {
-    val w = size.width
-    val h = size.height
-    val r = cornerRadius
-    val top = w - 2 * r
-    val side = h - 2 * r
-    val arc = (PI.toFloat() / 2f) * r
-    val total = 2 * top + 2 * side + 4 * arc
-    var d = fraction.coerceIn(0f, 1f) * total
-
-    fun arcPoint(cx: Float, cy: Float, startAngle: Float, length: Float): Offset {
-        val a = startAngle + if (r == 0f) 0f else length / r
-        return Offset(cx + r * cos(a), cy + r * sin(a))
-    }
-
-    val half = (PI / 2).toFloat()
-    val p: Offset = when {
-        d <= top -> Offset(r + d, 0f)
-        else -> {
-            d -= top
-            if (d <= arc) arcPoint(w - r, r, -half, d)
-            else {
-                d -= arc
-                if (d <= side) Offset(w, r + d)
-                else {
-                    d -= side
-                    if (d <= arc) arcPoint(w - r, h - r, 0f, d)
-                    else {
-                        d -= arc
-                        if (d <= top) Offset(w - r - d, h)
-                        else {
-                            d -= top
-                            if (d <= arc) arcPoint(r, h - r, half, d)
-                            else {
-                                d -= arc
-                                if (d <= side) Offset(0f, h - r - d)
-                                else arcPoint(r, r, 2 * half, d - side)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    return if (layoutDirection == LayoutDirection.Rtl) Offset(w - p.x, p.y) else p
-}
-
 /** Closed rounded-rect path (LTR orientation) starting at the end of the top-start radius, clockwise. */
 internal fun outlinePath(size: Size, cornerRadius: Float): Path {
     val w = size.width
@@ -124,6 +65,25 @@ internal fun outlinePath(size: Size, cornerRadius: Float): Path {
 }
 
 /**
+ * The slice of the outline described by [segment] (LTR orientation; RTL is a canvas mirror at draw
+ * time). A full segment is the closed outline. This is the path that gets drawn.
+ */
+internal fun outlineSegmentPath(size: Size, cornerRadius: Float, segment: OutlineSegment): Path {
+    val full = outlinePath(size, cornerRadius)
+    if (segment.isFull) return full
+    val measure = PathMeasure()
+    measure.setPath(full, false)
+    return Path().also {
+        measure.getSegment(
+            measure.length * segment.startFraction,
+            measure.length * segment.endFraction,
+            it,
+            true,
+        )
+    }
+}
+
+/**
  * Card-edge goal progress: [track] ring plus a [progress] arc with round caps. `null` draws nothing;
  * a full ring (progress >= 1) is drawn closed in the progress color.
  */
@@ -139,9 +99,8 @@ fun OutlineProgress(
     if (progress == null) return
     val layoutDirection = LocalLayoutDirection.current
     val segment = remember(progress, layoutDirection) { outlineSegment(progress, layoutDirection) }
-    val measure = remember { PathMeasure() }
     Canvas(modifier) {
-        drawOutline(segment, cornerRadius.toPx(), strokeWidth.toPx(), trackColor, progressColor, measure)
+        drawOutline(segment, cornerRadius.toPx(), strokeWidth.toPx(), trackColor, progressColor)
     }
 }
 
@@ -151,7 +110,6 @@ private fun DrawScope.drawOutline(
     strokeWidth: Float,
     trackColor: Color,
     progressColor: Color,
-    measure: PathMeasure,
 ) {
     // Stroke is centered on the path: inset by half so it stays inside the card bounds.
     val inset = strokeWidth / 2f
@@ -168,16 +126,7 @@ private fun DrawScope.drawOutline(
             }
             drawRoundRect(trackColor, size = box, cornerRadius = CornerRadius(radius), style = stroke)
             if (segment.endFraction > 0f) {
-                val path = outlinePath(box, radius)
-                measure.setPath(path, false)
-                val out = Path()
-                measure.getSegment(
-                    measure.length * segment.startFraction,
-                    measure.length * segment.endFraction,
-                    out,
-                    true,
-                )
-                drawPath(out, progressColor, style = stroke)
+                drawPath(outlineSegmentPath(box, radius, segment), progressColor, style = stroke)
             }
         }
     }
