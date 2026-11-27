@@ -1,0 +1,94 @@
+<section class="v-page" data-page="ds" data-title="Design system" data-group="Foundations">
+<h1>Design system · Dusk Ember</h1>
+<p class="v-lead">Warm plum surfaces, one ember accent, and big rounded numbers in Readex Pro (Latin and Arabic in one family). Three rules: the number is the hero, one tap does the daily job, and nothing scolds you.</p>
+<div class="v-section"><h2>Color primitives</h2><div data-render="primitives"></div></div>
+<div class="v-section"><h2>Semantic roles</h2><p>confetti-* and wallpaper are decorative roles, used only for the celebration and the widget previews.</p><div data-render="roles"></div></div>
+<div class="v-section"><h2>Contrast (WCAG 2.2 AA)</h2><div data-render="contrast"></div></div>
+<div class="v-section"><h2>Typography</h2><p>Display is for the streak number only. Arabic uses the same family. Numbers always use tabular figures so they don’t jitter when they change.</p><div class="v-card" data-render="type" data-sample="Gym · 12 of 30, 18 to go"></div></div>
+<div class="v-section"><h2>Spacing</h2><div class="v-card" data-render="space"></div></div>
+<div class="v-section"><h2>Shape</h2><div data-render="radius"></div></div>
+<div class="v-section"><h2>Elevation</h2><p>Cards are flat (tint, no shadow). Shadow only for the FAB, sheet, snackbar, dialog and widgets.</p><div data-render="elevation"></div></div>
+<div class="v-section"><h2>Icons</h2><p>Material Symbols Rounded, 24 dp. Compose: material-icons-extended rounded set.</p><div data-render="icons" data-names="add,remove,restart_alt,check,swap_vert,drag_indicator,delete,close,lock,info,error,history,check_circle"></div></div>
+
+<div class="v-section" id="c-card"><h2>Streak card</h2><p>The core component. Whole card is a button that opens the edit sheet; reset and steppers sit above it. The outline is the goal progress.</p>
+<div class="v-specimen app">
+<figure style="width:340px"><ul class="sc-list" style="padding:0"><li class="sc-row k-checkin"><button class="sc-hit" aria-label="Edit Read 20 pages" data-goto="streaks/sheet/edit"></button>
+<div class="sc-line1"><div class="sc-meta"><p class="sc-name">Read 20 pages</p><p class="sc-sub">Check-in · not yet today</p></div><button class="icon-btn sc-reset" aria-label="Reset Read 20 pages" data-snackbar="#sb-reset"><i data-icon="restart_alt"></i></button></div>
+<div class="sc-line2"><p class="sc-count"><span class="sc-num num">3</span><span class="sc-unit">days</span></p><div class="sc-steps"><button class="sc-step quiet icon-only" aria-label="Take one from Read 20 pages"><i data-icon="remove"></i></button><button class="sc-step plus" aria-label="Check in Read 20 pages" data-state-to="all-done"><i data-icon="add"></i><span>Check in</span></button></div></div></li></ul><figcaption>check-in · not yet</figcaption></figure>
+<figure style="width:340px"><ul class="sc-list" style="padding:0"><li class="sc-row k-checkin"><svg class="pg-edge" aria-hidden="true"><rect class="trk" pathLength="100"></rect><rect class="val" pathLength="100" stroke-dasharray="40.0 100"></rect></svg><button class="sc-hit" aria-label="Edit Gym" data-goto="streaks/sheet/edit"></button>
+<div class="sc-line1"><div class="sc-meta"><p class="sc-name">Gym</p><p class="sc-sub">Check-in · 12 of 30, 18 to go</p></div><button class="icon-btn sc-reset" aria-label="Reset Gym" data-snackbar="#sb-reset"><i data-icon="restart_alt"></i></button></div>
+<div class="sc-line2"><p class="sc-count"><span class="sc-num num">12</span><span class="sc-unit">days</span></p><div class="sc-steps"><button class="sc-step quiet icon-only" aria-label="Take one from Gym"><i data-icon="remove"></i></button><button class="sc-step plus done" aria-label="Checked in today. Tap to undo."><i data-icon="check"></i><span>Done</span></button></div></div></li></ul><figcaption>check-in · done · with goal 12/30</figcaption></figure>
+<figure style="width:340px"><ul class="sc-list" style="padding:0"><li class="sc-row k-since"><svg class="pg-edge" aria-hidden="true"><rect class="trk" pathLength="100"></rect><rect class="val" pathLength="100" stroke-dasharray="60.0 100"></rect></svg><button class="sc-hit" aria-label="Edit No smoking" data-goto="streaks/sheet/edit"></button>
+<div class="sc-line1"><div class="sc-meta"><p class="sc-name">No smoking</p><p class="sc-sub">Days since · 18 of 30, 12 to go</p></div><button class="icon-btn sc-reset" aria-label="Reset No smoking" data-snackbar="#sb-reset"><i data-icon="restart_alt"></i></button></div>
+<div class="sc-line2"><p class="sc-count"><span class="sc-num num">18</span><span class="sc-unit">days</span></p><div class="sc-steps"><button class="sc-step quiet icon-only" aria-label="Take one from No smoking"><i data-icon="remove"></i></button><button class="sc-step quiet icon-only" aria-label="Add a day to No smoking"><i data-icon="add"></i></button></div></div></li></ul><figcaption>days since · goal</figcaption></figure>
+<figure style="width:340px"><ul class="sc-list" style="padding:0"><li class="sc-row k-times"><svg class="pg-edge" aria-hidden="true"><rect class="trk" pathLength="100"></rect><rect class="val" pathLength="100" stroke-dasharray="62.5 100"></rect></svg><button class="sc-hit" aria-label="Edit Glasses of water" data-goto="streaks/sheet/edit"></button>
+<div class="sc-line1"><div class="sc-meta"><p class="sc-name">Glasses of water</p><p class="sc-sub">Times · 5 of 8, 3 more today</p></div><button class="icon-btn sc-reset" aria-label="Reset Glasses of water" data-snackbar="#sb-reset"><i data-icon="restart_alt"></i></button></div>
+<div class="sc-line2"><p class="sc-count"><span class="sc-num num">5</span><span class="sc-unit">today</span></p><div class="sc-steps"><button class="sc-step quiet icon-only" aria-label="Take one from Glasses of water"><i data-icon="remove"></i></button><button class="sc-step plus" aria-label="Add Glasses of water" data-state-to="celebrate-small"><i data-icon="add"></i><span>Add</span></button></div></div></li></ul><figcaption>times · daily goal</figcaption></figure>
+<figure style="width:340px"><ul class="sc-list" style="padding:0"><li class="sc-row k-checkin is-full"><svg class="pg-edge" aria-hidden="true"><rect class="trk" pathLength="100"></rect><rect class="val" pathLength="100" stroke-dasharray="100 100"></rect></svg><button class="sc-hit" aria-label="Edit No sugar" data-goto="streaks/sheet/edit"></button>
+<div class="sc-line1"><div class="sc-meta"><p class="sc-name">No sugar</p><p class="sc-sub">Check-in · goal 30 reached</p></div><button class="icon-btn sc-reset" aria-label="Reset No sugar" data-snackbar="#sb-reset"><i data-icon="restart_alt"></i></button></div>
+<div class="sc-line2"><p class="sc-count"><span class="sc-num num">31</span><span class="sc-unit">days</span></p><div class="sc-steps"><button class="sc-step quiet icon-only" aria-label="Take one from No sugar"><i data-icon="remove"></i></button><button class="sc-step plus done" aria-label="Checked in today. Tap to undo."><i data-icon="check"></i><span>Done</span></button></div></div></li></ul><figcaption>goal reached · outline closed</figcaption></figure>
+<figure style="width:340px"><ul class="sc-list" style="padding:0"><li class="sc-row k-times"><button class="sc-hit" aria-label="Edit Count" data-goto="streaks/sheet/edit"></button>
+<div class="sc-line1"><div class="sc-meta"><p class="sc-name unnamed">Count</p><p class="sc-sub">Times · running total</p></div><button class="icon-btn sc-reset" aria-label="Reset Count" data-snackbar="#sb-reset"><i data-icon="restart_alt"></i></button></div>
+<div class="sc-line2"><p class="sc-count"><span class="sc-num num">0</span><span class="sc-unit">times</span></p><div class="sc-steps"><button class="sc-step quiet icon-only" aria-label="Take one from Count" disabled><i data-icon="remove"></i></button><button class="sc-step plus" aria-label="Add Count"><i data-icon="add"></i><span>Add</span></button></div></div></li></ul><figcaption>unnamed · minus disabled at 0</figcaption></figure>
+</div><p class="v-note">Card hit area is the full card; reset 48 dp; steppers 48 dp (minus) and 56 dp tall (plus), 8 dp apart. TalkBack reads “Gym, check-in, 12 days, 12 of 30, done today” with custom actions Check in / Undo / Reset / Delete.</p></div>
+
+<div class="v-section" id="c-stepper"><h2>Stepper buttons</h2><p>Plus carries the day’s job, so it’s the filled one and has a label. Minus is quiet.</p>
+<div class="v-specimen app">
+<figure><button class="sc-step plus"><i data-icon="add"></i>Check in</button><figcaption>plus · default</figcaption></figure>
+<figure><button class="sc-step plus is-focus"><i data-icon="add"></i>Check in</button><figcaption>focus</figcaption></figure>
+<figure><button class="sc-step plus is-pressed"><i data-icon="add"></i>Check in</button><figcaption>pressed</figcaption></figure>
+<figure><button class="sc-step plus done"><i data-icon="check"></i>Done</button><figcaption>done today</figcaption></figure>
+<figure><button class="sc-step plus"><i data-icon="add"></i>Add</button><figcaption>times</figcaption></figure>
+<figure><button class="sc-step quiet icon-only" aria-label="Take one"><i data-icon="remove"></i></button><figcaption>minus</figcaption></figure>
+<figure><button class="sc-step quiet icon-only is-focus" aria-label="Take one"><i data-icon="remove"></i></button><figcaption>minus · focus</figcaption></figure>
+<figure><button class="sc-step quiet icon-only" disabled aria-label="Take one"><i data-icon="remove"></i></button><figcaption>minus · disabled</figcaption></figure>
+</div></div>
+
+<div class="v-section" id="c-button"><h2>Button</h2><p>One primary per view. Verbs as labels.</p>
+<div class="v-specimen app">
+<figure><button class="btn">Save streak</button><figcaption>primary</figcaption></figure><figure><button class="btn is-hover">Save streak</button><figcaption>hover</figcaption></figure><figure><button class="btn is-focus">Save streak</button><figcaption>focus</figcaption></figure><figure><button class="btn is-pressed">Save streak</button><figcaption>pressed</figcaption></figure><figure><button class="btn is-loading" aria-busy="true">Save streak</button><figcaption>loading</figcaption></figure><figure><button class="btn" disabled>Save streak</button><figcaption>disabled</figcaption></figure>
+<figure><button class="btn secondary">Keep going</button><figcaption>secondary</figcaption></figure><figure><button class="btn outline">Cancel</button><figcaption>outline</figcaption></figure><figure><button class="btn text">Set a new goal</button><figcaption>text</figcaption></figure><figure><button class="btn danger">Delete and start fresh</button><figcaption>danger (T6 only)</figcaption></figure><figure><button class="btn danger-text"><i data-icon="delete"></i>Delete streak</button><figcaption>danger text</figcaption></figure>
+<figure><button class="fab"><i data-icon="add"></i>New streak</button><figcaption>FAB (extended)</figcaption></figure>
+</div><p class="v-note">Height 56 dp, touch ≥ 48 dp. Loading keeps width.</p></div>
+
+<div class="v-section" id="c-field"><h2>Number and text field</h2>
+<div class="v-specimen app">
+<figure style="width:260px"><div class="field"><label for="d1">Name <span class="muted">(optional)</span></label><div class="control"><input id="d1" placeholder="e.g. Gym"></div></div><figcaption>default</figcaption></figure>
+<figure style="width:260px"><div class="field is-focus"><label for="d2">Days already done</label><div class="control"><input id="d2" value="12" inputmode="numeric" class="num"></div></div><figcaption>focus</figcaption></figure>
+<figure style="width:260px"><div class="field is-error"><label for="d3">Goal</label><div class="control"><input id="d3" value="10" inputmode="numeric" class="num" aria-invalid="true" aria-describedby="d3-e"></div><p class="help" id="d3-e"><i data-icon="error"></i>Make it more than 12</p></div><figcaption>error (T1)</figcaption></figure>
+<figure style="width:260px"><div class="field"><label for="d4">Goal</label><div class="control"><input id="d4" value="30" inputmode="numeric" class="num" aria-describedby="d4-h"></div><p class="help" id="d4-h">18 to go</p></div><figcaption>with helper</figcaption></figure>
+</div><p class="v-note">Numbers use the numeric keyboard, accept digits only, format with the locale on blur.</p></div>
+
+<div class="v-section" id="c-select"><h2>Type selector, switch</h2>
+<div class="v-specimen app">
+<figure style="width:340px"><div class="field"><label>Type</label><div class="segmented" role="group" aria-label="Type"><button aria-pressed="true" data-state-to="new-checkin">Check-in</button><button aria-pressed="false" data-state-to="new-since">Days since</button><button aria-pressed="false" data-state-to="new-times">Times</button></div></div><figcaption>segmented · 3 types</figcaption></figure>
+<figure style="width:340px"><div class="locked"><i data-icon="lock"></i><span>Type: Days since. Can’t be changed after creating.</span></div><figcaption>locked (edit)</figcaption></figure>
+<figure style="width:340px"><div class="sheet" style="position:static;padding:0;background:none"><label class="switch"><span class="txt">Break the streak if I miss a day<small>Back to 0 after a full day without a check-in</small></span><input type="checkbox" checked></label></div><figcaption>switch with explanation</figcaption></figure>
+<figure style="width:340px"><div class="sheet" style="position:static;padding:0;background:none"><label class="switch"><span class="txt">Reset at midnight<small>Starts again from 0 every day</small></span><input type="checkbox"></label></div><figcaption>switch off</figcaption></figure>
+</div></div>
+
+<div class="v-section" id="c-sheet"><h2>Bottom sheet</h2><p>Calf AdaptiveBottomSheet: Material 3 modal sheet on Android, native sheet on iOS. Drag handle, title, close. Discard confirm only if something was typed.</p>
+<div class="v-specimen app"><figure style="width:380px"><div class="sheet" style="position:static"><div class="sheet-head"><h2>New streak</h2><button class="icon-btn" aria-label="Close"><i data-icon="close"></i></button></div><div class="stack"><div class="field"><label for="d5">Name <span class="muted">(optional)</span></label><div class="control"><input id="d5" placeholder="e.g. Gym"></div></div><div class="field"><label>Type</label><div class="segmented" role="group" aria-label="Type"><button aria-pressed="true" data-state-to="new-checkin">Check-in</button><button aria-pressed="false" data-state-to="new-since">Days since</button><button aria-pressed="false" data-state-to="new-times">Times</button></div></div><button class="btn block">Save streak</button></div></div><figcaption>sheet</figcaption></figure></div></div>
+
+<div class="v-section" id="c-feedback"><h2>Snackbar, callout, dialog, celebration</h2>
+<div class="v-specimen app">
+<figure style="width:340px"><div class="snackbar"><span class="msg">Gym reset to 0</span><button class="btn text">Undo</button></div><figcaption>snackbar (T3)</figcaption></figure>
+<figure style="width:320px"><div class="callout info"><i data-icon="info"></i><div class="body"><strong>Counts on its own</strong>Grows by one every day. Tap reset if you slip.</div></div><figcaption>callout info</figcaption></figure>
+<figure style="width:320px"><div class="sc-note"><i data-icon="history"></i><span>Ended 25 Nov after 12 days. A new streak starts with your next check-in.</span></div><figcaption>card note (T4)</figcaption></figure>
+<figure style="width:360px"><div class="dialog" role="alertdialog"><h2>Start fresh?</h2><p>This deletes the saved file that can’t be opened. Every streak in it is lost.</p><div class="actions"><button class="btn text">Keep file</button><button class="btn danger">Delete and start fresh</button></div></div><figcaption>dialog (T6)</figcaption></figure>
+<figure style="width:340px"><div class="celebrate" style="position:relative;inset:auto;background:none;padding:40px 0 0"><div class="burst">
+<svg class="confetti" viewBox="0 0 330 170" aria-hidden="true"><circle class="c1" cx="40" cy="60" r="7"></circle><rect class="c2" x="80" y="20" width="12" height="20" rx="3" transform="rotate(25 86 30)"></rect><circle class="c3" cx="140" cy="34" r="5"></circle><rect class="c1" x="200" y="16" width="10" height="18" rx="3" transform="rotate(-20 205 25)"></rect><circle class="c2" cx="250" cy="58" r="8"></circle><rect class="c3" x="292" y="40" width="12" height="22" rx="3" transform="rotate(40 298 51)"></rect><circle class="c3" cx="20" cy="120" r="5"></circle><circle class="c1" cx="310" cy="120" r="6"></circle><rect class="c2" x="170" y="70" width="8" height="14" rx="2" transform="rotate(60 174 77)"></rect></svg>
+<p class="big num">30</p><h2 id="cel-t">No smoking · 30 days</h2><p id="cel-d">You set this goal on 28 Oct and made it. The count keeps going from here.</p>
+<button class="btn" data-close>Keep going</button><button class="btn text" data-goto="streaks/sheet/edit-reached">Set a new goal</button></div></div><figcaption>celebration card (big)</figcaption></figure>
+</div></div>
+
+<div class="v-section" id="errors"><h2>Error and feedback framework</h2><p>Every message lands on one surface. Decision order: decision needed or irreversible → T6; one input → T1; nothing to show → T5; lasting condition → T4; otherwise T3.</p>
+<div class="v-specimen app">
+<figure style="width:260px"><div class="field is-error"><label for="e1">Starting value</label><div class="control"><input id="e1" value="-3" inputmode="numeric" class="num" aria-invalid="true" aria-describedby="e1-e"></div><p class="help" id="e1-e"><i data-icon="error"></i>Use a whole number, 0 or more</p></div><figcaption>T1 field: invalid starting value or goal</figcaption></figure>
+<figure><p class="muted" style="max-width:240px">Not used: the sheet has at most 4 fields, so focus jumps to the first error instead.</p><figcaption>T2 form summary</figcaption></figure>
+<figure style="width:320px"><div class="snackbar"><span class="msg">Couldn’t save that change.</span><button class="btn text">Try again</button></div><figcaption>T3 snackbar: reset, delete, save failed, daily goal</figcaption></figure>
+<figure style="width:280px"><div class="sc-note"><i data-icon="history"></i><span>Ended 25 Nov after 12 days.</span></div><figcaption>T4 inline: streak ended while away</figcaption></figure>
+<figure style="width:300px"><div class="screen-error" style="padding:8px"><i data-icon="lock"></i><h2>Couldn’t open your streaks</h2><p>The saved file can’t be read on this phone.</p><button class="btn">Try again</button></div><figcaption>T5 screen: data can’t be decrypted</figcaption></figure>
+<figure style="width:340px"><div class="dialog" role="alertdialog"><h2>Discard this streak?</h2><p>Closing now throws away what you typed.</p><div class="actions"><button class="btn text">Keep editing</button><button class="btn danger">Discard</button></div></div><figcaption>T6 dialog: start fresh, discard</figcaption></figure>
+</div></div>
+</section>

@@ -1,0 +1,92 @@
+/* StreakCounter round 1. Shared signature-screen pieces (token-only), then per-option character scoped to .opt-x. */
+.v-option { margin-bottom: 96px; }
+.v-option > header h2 { font-size: 24px; margin: 0 0 4px; }
+.v-option > header p { margin: 0 0 4px; max-width: 80ch; }
+
+.sc { position: relative; }
+.sc p, .sc h1, .sc h2 { margin: 0; }
+.sc-top { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-2); padding: var(--space-8) var(--space-5) var(--space-1); }
+.sc-date { font: var(--type-caption); letter-spacing: var(--type-caption-tracking); color: var(--color-on-surface-variant); }
+.sc-title { font: var(--type-headline); letter-spacing: var(--type-headline-tracking); color: var(--color-on-background); }
+.sc-summary { padding: 0 var(--space-5) var(--space-4); font: var(--type-body-sm); color: var(--color-on-surface-variant); }
+.sc-list { list-style: none; margin: 0; padding: 0 var(--space-4); display: grid; gap: var(--space-3); }
+.sc-row { background: var(--color-surface); color: var(--color-on-surface); border-radius: var(--radius-lg); padding: var(--space-4) var(--space-4) var(--space-3); box-shadow: var(--elevation-1); }
+.sc-line1 { display: flex; gap: var(--space-2); align-items: flex-start; }
+.sc-meta { flex: 1; min-width: 0; }
+.sc-name { font: var(--type-title-sm); letter-spacing: var(--type-title-sm-tracking); }
+.sc-sub { margin-top: 2px; font: var(--type-caption); letter-spacing: var(--type-caption-tracking); color: var(--color-on-surface-variant); }
+.sc-reset { margin: calc(-1 * var(--space-3)) calc(-1 * var(--space-2)) 0 0; }
+.sc-line2 { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-3); margin-top: var(--space-2); }
+.sc-count { display: flex; align-items: baseline; gap: var(--space-2); min-width: 0; }
+.sc-num { font: var(--type-display); letter-spacing: var(--type-display-tracking); color: var(--color-on-surface); }
+.sc-unit { font: var(--type-body-sm); color: var(--color-on-surface-variant); }
+.sc-steps { display: flex; gap: var(--space-2); flex: none; }
+.sc-step { min-width: var(--size-control); height: var(--size-control); display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); border: 0; border-radius: var(--radius-full); cursor: pointer; font: var(--type-label); letter-spacing: var(--type-label-tracking); }
+.sc-step.plus { background: var(--color-primary); color: var(--color-on-primary); }
+.sc-step.plus.done { background: var(--color-primary-container); color: var(--color-on-primary-container); }
+.sc-step.quiet { background: transparent; color: var(--color-on-surface); box-shadow: inset 0 0 0 1px var(--color-outline); }
+.sc-step.sm { min-width: var(--size-touch); height: var(--size-touch); }
+.sc-step-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.sc-fabbar { position: sticky; bottom: 0; display: flex; justify-content: flex-end; padding: var(--space-6) var(--space-4) var(--space-4); margin-top: auto; pointer-events: none; }
+.sc-fabbar .fab { position: static; pointer-events: auto; }
+.sc-sheet-title { margin: 0 0 var(--space-4); font: var(--type-title); color: var(--color-on-surface); }
+
+.sc-widget { width: 156px; padding: var(--space-3); border-radius: var(--radius-xl, var(--radius-lg)); background: var(--color-surface); color: var(--color-on-surface); box-shadow: var(--elevation-2); display: grid; gap: var(--space-1); }
+.sc-wname { margin: 0; font: var(--type-label); color: var(--color-on-surface-variant); }
+.sc-wnum { margin: 0; font: var(--type-display); letter-spacing: var(--type-display-tracking); }
+.sc-wrow { display: flex; justify-content: space-between; }
+
+/* A · Sage Journal: soft paper cards, serif numerals, round steppers. */
+.opt-a .sc-row.is-done .sc-num { color: var(--color-primary); }
+
+/* B · Still Water: ledger rules, no cards, uppercase mono labels, squarish steppers. */
+.opt-b .sc-list { gap: 0; }
+.opt-b .sc-row { background: transparent; box-shadow: none; border-radius: 0; border-top: 1px solid var(--color-outline-variant); padding: var(--space-4) var(--space-1); }
+.opt-b .sc-row:last-child { border-bottom: 1px solid var(--color-outline-variant); }
+.opt-b .sc-date, .opt-b .sc-sub, .opt-b .sc-unit { text-transform: uppercase; letter-spacing: 0.06em; font: var(--type-caption); }
+.opt-b .sc-step { border-radius: var(--radius-md); }
+.opt-b .sc-line2 { align-items: center; }
+.opt-b .fab { border-radius: var(--radius-md); }
+.opt-b .btn, .opt-b .segmented { border-radius: var(--radius-md); }
+.opt-b .sc-widget { border-radius: var(--radius-lg); }
+
+/* C · Dusk Ember: big glowing numbers, tinted pill rows, labelled pill buttons. */
+.opt-c .sc-title { font-size: 34px; line-height: 40px; }
+.opt-c .sc-row { background: var(--color-surface-container); box-shadow: none; border-radius: var(--radius-xl); padding: var(--space-5); }
+.opt-c .sc-num { color: var(--color-primary); }
+.opt-c .k-since .sc-num, .opt-c .k-times .sc-num { color: var(--color-on-surface); }
+.opt-c .sc-step.plus .sc-step-label { position: static; width: auto; height: auto; clip: auto; overflow: visible; }
+.opt-c .sc-step.plus { padding: 0 var(--space-5) 0 var(--space-4); }
+.opt-c .sc-step.sm { padding: 0; }
+.opt-c .sc-wnum { color: var(--color-primary); }
+.opt-c .sc-widget { background: var(--color-surface-container); }
+.app .material-symbols-outlined, .app .material-symbols-rounded { font-size: 24px; line-height: 1; }
+.v-specimen.app { flex-direction: row; flex-wrap: wrap; gap: var(--space-6); }
+
+/* Goal progress options (round 1b) */
+.pg-frame { height: auto; }
+.pg-list { padding-top: var(--space-4); }
+.pg-bar { margin-top: var(--space-3); height: 6px; border-radius: var(--radius-full); background: var(--color-outline-variant); overflow: hidden; }
+.pg-bar > span { display: block; height: 100%; border-radius: inherit; background: var(--color-primary); }
+.pg-cap { margin-top: var(--space-2); font: var(--type-caption); color: var(--color-on-surface-variant); }
+.pg-reached { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); margin-top: var(--space-2); }
+.pg-reached .btn.text { min-height: 40px; }
+.pg-ring { position: relative; width: 88px; height: 88px; display: grid; place-items: center; flex: none; }
+.pg-ring svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.pg-ring .trk { fill: none; stroke: var(--color-outline-variant); stroke-width: 6; }
+.pg-ring .val { fill: none; stroke: var(--color-primary); stroke-width: 6; stroke-linecap: round; }
+.pg-ring > .num { font: var(--type-headline); letter-spacing: var(--type-headline-tracking); color: var(--color-primary); }
+.pg-ring.sm { width: 72px; height: 72px; }
+.pg-ring.sm > .num { font: var(--type-title); }
+.pg-wbox { padding: var(--space-6) var(--space-4); }
+.pg-widget .pg-bar { margin-top: var(--space-1); }
+.pg-reached .chip, .pg-reached .btn { white-space: nowrap; }
+/* D: progress drawn on the card edge. Start top-left, clockwise; mirrored for RTL. */
+.pg-edged { position: relative; }
+.pg-edge { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+[dir="rtl"] .pg-edge { transform: scaleX(-1); }
+.pg-edge rect { x: 1.5px; y: 1.5px; width: calc(100% - 3px); height: calc(100% - 3px); rx: calc(var(--radius-xl) - 1.5px); fill: none; stroke-width: 3; }
+.pg-edge .trk { stroke: var(--color-outline-variant); }
+.pg-edge .val { stroke: var(--color-primary); stroke-linecap: round; }
+.pg-edged.is-full .pg-edge .trk { stroke: var(--color-primary); }
+.pg-widget.pg-edged .pg-edge rect { rx: calc(var(--radius-xl) - 1.5px); }
