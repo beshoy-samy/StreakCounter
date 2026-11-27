@@ -21,8 +21,9 @@ internal fun Project.configureKotlinMultiplatform() {
             // Library bytecode target stays low so consumers are not forced up.
             compilerOptions { jvmTarget.set(JvmTarget.JVM_11) }
 
-            // Host (JVM) tests: commonTest + androidHostTest
-            withHostTest {}
+            // Host (JVM) tests: commonTest + androidHostTest. Android resources are included so Robolectric
+            // based Compose UI tests can load Compose Multiplatform resources (fonts, drawables).
+            withHostTest { isIncludeAndroidResources = true }
             // Device tests: commonTest + androidDeviceTest
             withDeviceTest {
                 instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

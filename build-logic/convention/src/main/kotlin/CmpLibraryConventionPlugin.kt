@@ -1,7 +1,10 @@
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import com.streakcounter.convention.libs
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.dependencies
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 class CmpLibraryConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
@@ -10,6 +13,14 @@ class CmpLibraryConventionPlugin : Plugin<Project> {
                 apply("com.streakcounter.convention.kmp.library")
                 apply("org.jetbrains.kotlin.plugin.compose")
                 apply("org.jetbrains.compose")
+            }
+
+            // Compose resources reach Android as assets, which the KMP library plugin only packages
+            // when Android resources are enabled.
+            extensions.configure<KotlinMultiplatformExtension> {
+                targets.withType(KotlinMultiplatformAndroidLibraryTarget::class.java).configureEach {
+                    androidResources { enable = true }
+                }
             }
 
             dependencies {
