@@ -2,6 +2,8 @@ package com.streakcounter.feature.streaks.presentation.list
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.heightIn
@@ -59,8 +61,7 @@ import com.streakcounter.feature.streaks.domain.StreakType
 import com.streakcounter.feature.streaks.presentation.celebrate.CelebrationOverlay
 import com.streakcounter.feature.streaks.presentation.celebrate.SmallBurst
 import com.streakcounter.feature.streaks.presentation.celebrate.rememberReducedMotion
-import com.streakcounter.feature.streaks.presentation.list.components.unnamedName
-import kotlin.uuid.Uuid
+import com.streakcounter.feature.streaks.presentation.list.components.streakDisplayName
 import com.streakcounter.feature.streaks.presentation.list.components.EmptyState
 import com.streakcounter.feature.streaks.presentation.list.components.OpeningSkeleton
 import com.streakcounter.feature.streaks.presentation.list.components.ReorderTopBar
@@ -103,16 +104,24 @@ fun StreakListScreen(
     state: StreakListState,
     onAction: (StreakListAction) -> Unit,
     today: LocalDate? = null,
+    reducedMotion: Boolean = rememberReducedMotion(),
 ) {
     val snackbarHost = remember { SnackbarHostState() }
     val ready = state as? StreakListState.Ready
     val reorderMode = ready?.reorderMode == true
     val showFab = ready != null && ready.cards.isNotEmpty() && !reorderMode
-    val reducedMotion = rememberReducedMotion()
-    val burstId = ready?.celebration?.takeIf { it.size == CelebrationSize.SMALL }?.streakId
+    val small = ready?.celebration?.takeIf { it.size == CelebrationSize.SMALL }
+    val big = ready?.celebration?.takeIf { it.size == CelebrationSize.BIG }
 
     Box(Modifier.fillMaxSize()) {
+        // While the big celebration is up it is the only thing a screen reader or keyboard can reach.
+        val behindOverlay = if (big != null) {
+            Modifier.clearAndSetSemantics { }.focusProperties { canFocus = false }
+        } else {
+            Modifier
+        }
         Scaffold(
+            modifier = behindOverlay,
             containerColor = MaterialTheme.colorScheme.background,
             topBar = { if (reorderMode) ReorderTopBar(onDone = { onAction(StreakListAction.OnReorderDone) }) },
             snackbarHost = { SnackbarHost(snackbarHost) },
@@ -142,18 +151,18 @@ fun StreakListScreen(
                         )
                     }
                 } else {
-                    StreakList(state, today, onAction, padding, burstId, reducedMotion)
+                    StreakList(state, today, onAction, padding, small, reducedMotion)
                 }
             }
         }
 
         SnackbarEffect(ready, snackbarHost, onAction)
-        DailyGoalEffect(ready, snackbarHost, onAction)
+        small?.let { SmallCelebrationEffect(it, snackbarHost, onAction) }
 
         ready?.sheet?.let { StreakSheet(it, onAction) }
 
         // The big celebration covers the list; the small one is a burst on the card plus a snackbar.
-        ready?.celebration?.takeIf { it.size == CelebrationSize.BIG }?.let {
+        big?.let {
             CelebrationOverlay(
                 ui = it,
                 reducedMotion = reducedMotion,
@@ -204,7 +213,7 @@ private fun StreakList(
     today: LocalDate?,
     onAction: (StreakListAction) -> Unit,
     padding: PaddingValues,
-    burstId: Uuid?,
+    small: CelebrationUi?,
     reducedMotion: Boolean,
 ) {
     val currentOnAction by rememberUpdatedState(onAction)
@@ -261,9 +270,10 @@ private fun StreakList(
                         StreakCard(card = card, today = today, index = index, count = cards.size, onAction = onAction)
                     }
                     SmallBurst(
-                        visible = card.id == burstId,
+                        visible = small?.streakId == card.id,
                         reducedMotion = reducedMotion,
                         modifier = Modifier.matchParentSize(),
+                        playKey = small?.let { "${it.streakId}:${it.value}" }.orEmpty(),
                     )
                 }
             }
@@ -418,27 +428,25 @@ private fun SnackbarEffect(
 }
 
 /**
- * The snackbar for a SMALL celebration ("Water: 8 today. That’s your goal."). It queues behind any
- * other snackbar; once it closes the celebration is reported as seen (OnCelebrationDismiss), which
- * is also what ends the burst.
+ * A SMALL celebration is one event: the burst on its card (SmallBurst, on its own 1 s clock), the
+ * snackbar "Water: 8 today. That’s your goal." and, once the snackbar has been and gone, the report
+ * that it was seen (OnCelebrationDismiss). Everything is built from the celebration itself, so
+ * the dismissal never depends on [StreakListState.Ready.dailyGoalHit]. The snackbar queues behind
+ * any other one (an Undo offer); the burst has long finished by then, so nothing is left hanging.
  */
 @Composable
-private fun DailyGoalEffect(
-    ready: StreakListState.Ready?,
+private fun SmallCelebrationEffect(
+    celebration: CelebrationUi,
     host: SnackbarHostState,
     onAction: (StreakListAction) -> Unit,
 ) {
     val currentOnAction by rememberUpdatedState(onAction)
-    val hit = ready?.dailyGoalHit
-    val message = hit?.let {
-        stringResource(
-            Res.string.snackbar_daily_goal,
-            it.name ?: stringResource(unnamedName(ready.cards.firstOrNull { c -> c.id == it.streakId }?.type ?: StreakType.TIMES)),
-            formatNumber(it.value),
-        )
-    }
-    LaunchedEffect(hit?.streakId, hit?.value) {
-        message ?: return@LaunchedEffect
+    val message = stringResource(
+        Res.string.snackbar_daily_goal,
+        streakDisplayName(celebration.name, celebration.type),
+        formatNumber(celebration.value),
+    )
+    LaunchedEffect(celebration.streakId, celebration.value) {
         host.showSnackbar(message = message, duration = SnackbarDuration.Short)
         currentOnAction(StreakListAction.OnCelebrationDismiss)
     }

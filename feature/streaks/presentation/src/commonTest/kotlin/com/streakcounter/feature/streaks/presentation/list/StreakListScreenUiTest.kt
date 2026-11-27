@@ -45,6 +45,7 @@ import com.streakcounter.core.designsystem.theme.StreakTheme
 import com.streakcounter.core.domain.DataError
 import com.streakcounter.feature.streaks.domain.StreakType
 import com.streakcounter.feature.streaks.presentation.UiTestBase
+import com.streakcounter.feature.streaks.presentation.celebrate.SMALL_BURST_TAG
 import com.streakcounter.feature.streaks.presentation.list.components.OPENING_SKELETON_TAG
 import com.streakcounter.feature.streaks.presentation.list.components.nameTag
 import com.streakcounter.feature.streaks.presentation.session.UndoKind
@@ -104,9 +105,9 @@ class StreakListScreenUiTest : UiTestBase() {
     )
 
     @Composable
-    private fun Screen(state: StreakListState, actions: MutableList<StreakListAction>) {
+    private fun Screen(state: StreakListState, actions: MutableList<StreakListAction>, reducedMotion: Boolean = false) {
         StreakTheme(darkTheme = false) {
-            StreakListScreen(state = state, onAction = { actions += it }, today = today)
+            StreakListScreen(state = state, onAction = { actions += it }, today = today, reducedMotion = reducedMotion)
         }
     }
 
@@ -174,6 +175,109 @@ class StreakListScreenUiTest : UiTestBase() {
         mainClock.advanceTimeBy(6_000)
         waitForIdle()
         assertEquals(listOf<StreakListAction>(StreakListAction.OnCelebrationDismiss), actions)
+    }
+
+    private val waterId = Uuid.parse("00000000-0000-0000-0000-000000000002")
+    private val twoCards = listOf(
+        card(),
+        card(id = waterId, name = "Water", type = StreakType.TIMES, value = 8, goal = 8),
+    )
+    private val waterSmall = CelebrationUi(waterId, CelebrationSize.SMALL, 8, "Water", StreakType.TIMES)
+
+    @Test
+    fun list_is_unreachable_for_screen_readers_while_the_big_celebration_shows() = runComposeUiTest {
+        val actions = mutableListOf<StreakListAction>()
+        val big = CelebrationUi(gymId, CelebrationSize.BIG, 30, "Gym", StreakType.CHECK_IN)
+        setContent { Screen(ready(celebration = big), actions) }
+        waitForIdle()
+
+        onNode(hasContentDescription("Check in Gym")).assertDoesNotExist()
+        onNode(hasContentDescription("Reset Gym")).assertDoesNotExist()
+        onNodeWithText("Keep going").assertExists()
+    }
+
+    @Test
+    fun list_is_reachable_without_a_celebration() = runComposeUiTest {
+        setContent { Screen(ready(), mutableListOf()) }
+        onNode(hasContentDescription("Check in Gym")).assertExists()
+    }
+
+    @Test
+    fun small_burst_is_on_the_celebrated_card_only() = runComposeUiTest {
+        mainClock.autoAdvance = false
+        setContent { Screen(ready(cards = twoCards, celebration = waterSmall), mutableListOf()) }
+        waitForIdle()
+
+        val burst = onNodeWithTag(SMALL_BURST_TAG).fetchSemanticsNode().boundsInRoot
+        val water = onNode(hasText("Water") and hasClickAction()).fetchSemanticsNode().boundsInRoot
+        val gym = onNode(hasText("Gym") and hasClickAction()).fetchSemanticsNode().boundsInRoot
+        assertTrue(burst.center.y in water.top..water.bottom, "burst $burst water $water")
+        assertTrue(burst.center.y !in gym.top..gym.bottom, "burst $burst gym $gym")
+    }
+
+    @Test
+    fun small_burst_is_gone_after_about_a_second() = runComposeUiTest {
+        mainClock.autoAdvance = false
+        setContent { Screen(ready(cards = twoCards, celebration = waterSmall), mutableListOf()) }
+        waitForIdle()
+        onNodeWithTag(SMALL_BURST_TAG).assertExists()
+
+        mainClock.advanceTimeBy(1_600)
+        onNodeWithTag(SMALL_BURST_TAG).assertDoesNotExist()
+    }
+
+    @Test
+    fun no_burst_for_a_big_celebration() = runComposeUiTest {
+        val big = CelebrationUi(gymId, CelebrationSize.BIG, 30, "Gym", StreakType.CHECK_IN)
+        setContent { Screen(ready(celebration = big), mutableListOf()) }
+        waitForIdle()
+        onNodeWithTag(SMALL_BURST_TAG).assertDoesNotExist()
+    }
+
+    @Test
+    fun reduced_motion_small_celebration_still_ends_and_dismisses() = runComposeUiTest {
+        val actions = mutableListOf<StreakListAction>()
+        mainClock.autoAdvance = false
+        setContent { Screen(ready(cards = twoCards, celebration = waterSmall), actions, reducedMotion = true) }
+        waitForIdle()
+        // The still frame is shown for the same second, then it is gone.
+        onNodeWithTag(SMALL_BURST_TAG).assertExists()
+
+        mainClock.advanceTimeBy(1_600)
+        onNodeWithTag(SMALL_BURST_TAG).assertDoesNotExist()
+        mainClock.advanceTimeBy(6_000)
+        waitForIdle()
+        assertEquals(listOf<StreakListAction>(StreakListAction.OnCelebrationDismiss), actions)
+    }
+
+    @Test
+    fun small_celebration_dismisses_even_without_a_daily_goal_hit() = runComposeUiTest {
+        val actions = mutableListOf<StreakListAction>()
+        mainClock.autoAdvance = false
+        setContent { Screen(ready(cards = twoCards, celebration = waterSmall, dailyGoalHit = null), actions) }
+        waitForIdle()
+        mainClock.advanceTimeBy(500)
+        onNodeWithText("Water: 8 today. That’s your goal.").assertExists()
+
+        mainClock.advanceTimeBy(6_000)
+        waitForIdle()
+        assertEquals(listOf<StreakListAction>(StreakListAction.OnCelebrationDismiss), actions)
+    }
+
+    @Test
+    fun small_burst_does_not_hang_around_while_its_snackbar_waits_behind_an_undo() = runComposeUiTest {
+        val actions = mutableListOf<StreakListAction>()
+        mainClock.autoAdvance = false
+        val state = ready(
+            cards = twoCards,
+            celebration = waterSmall,
+            undo = UndoUi(UndoKind.RESET, "Gym", StreakType.CHECK_IN),
+        )
+        setContent { Screen(state, actions) }
+        waitForIdle()
+
+        mainClock.advanceTimeBy(2_000)
+        onNodeWithTag(SMALL_BURST_TAG).assertDoesNotExist()
     }
 
     @Test

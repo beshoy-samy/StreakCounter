@@ -1,6 +1,7 @@
 package com.streakcounter.feature.streaks.presentation.celebrate
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,12 +18,26 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.backhandler.BackHandler
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -53,6 +68,7 @@ internal const val BIG_CELEBRATION_MILLIS = 2_500
  * and two actions. The animation plays once and rests on its last frame; [reducedMotion] shows
  * that frame straight away. The scrim swallows taps, so the only ways out are the two buttons.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun CelebrationOverlay(
     ui: CelebrationUi,
@@ -69,9 +85,29 @@ fun CelebrationOverlay(
     val amount = stringResource(Res.string.celebrate_amount, value, unit)
     val heading = ui.name?.let { stringResource(Res.string.celebrate_heading, it, amount) } ?: amount
 
+    // Back (and Escape on a keyboard) means "Keep going": the overlay can't be left half-open.
+    BackHandler(enabled = true, onBack = onKeepGoing)
+    val overlayFocus = remember { FocusRequester() }
+    // Focus moves into the overlay so keyboards and switch access start here (and Escape reaches it),
+    // not on the list behind.
+    LaunchedEffect(Unit) {
+        withFrameNanos { }
+        runCatching { overlayFocus.requestFocus() }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .focusRequester(overlayFocus)
+            .onPreviewKeyEvent { event ->
+                if (event.key == Key.Escape) {
+                    if (event.type == KeyEventType.KeyUp) onKeepGoing()
+                    true
+                } else {
+                    false
+                }
+            }
+            .focusable()
             .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.55f))
             // Swallows taps without adding semantics (a clickable would merge the buttons into one node).
             .pointerInput(Unit) { detectTapGestures { } }
@@ -80,11 +116,14 @@ fun CelebrationOverlay(
     ) {
         Box(Modifier.widthIn(max = 330.dp).fillMaxWidth()) {
             Surface(
+                modifier = Modifier.fillMaxWidth().semantics {
+                    paneTitle = heading
+                    isTraversalGroup = true
+                },
                 shape = MaterialTheme.shapes.extraLarge,
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 contentColor = MaterialTheme.colorScheme.onSurface,
                 shadowElevation = 8.dp,
-                modifier = Modifier.fillMaxWidth(),
             ) {
                 Column(
                     modifier = Modifier.padding(start = Spacing.s6, end = Spacing.s6, top = Spacing.s8, bottom = Spacing.s6),
@@ -136,6 +175,7 @@ fun CelebrationOverlay(
                     file = "files/celebrate_big.json",
                     durationMillis = BIG_CELEBRATION_MILLIS,
                     reducedMotion = reducedMotion,
+                    playKey = "big:${ui.streakId}:${ui.value}",
                     modifier = Modifier.fillMaxSize().testTag(CELEBRATION_ANIMATION_TAG),
                 )
             }

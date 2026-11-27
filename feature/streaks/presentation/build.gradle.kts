@@ -15,6 +15,8 @@ kotlin {
             implementation(libs.calf.ui)
             // Lottie player for the goal celebrations.
             implementation(libs.compottie)
+            // Multiplatform BackHandler: back dismisses the celebration overlay.
+            implementation(libs.jetbrains.compose.ui.backhandler)
         }
         commonTest.dependencies {
             implementation(projects.core.testing)
