@@ -32,20 +32,29 @@ fun NewStreak.toStreak(id: Uuid, position: Int, today: LocalDate): Streak {
     )
 }
 
-/** [count] is the number the sheet shows: days so far (days since), current count, or running total. */
+/**
+ * [count] is the number the sheet shows: days so far (days since), current count, or running total.
+ * [countChanged] is false when the user never touched that field; the stored count then wins, so a
+ * widget tap, check-in or midnight that happened while the sheet was open is not undone.
+ */
 data class StreakEdit(
     val name: String?,
     val count: Int,
     val goal: Int?,
     val autoReset: Boolean,
     val goalChanged: Boolean,
+    val countChanged: Boolean,
 )
 
-/** Spec 4.1a. Edits never lose a count silently. */
+/**
+ * Spec 4.1a. Edits never lose a count silently. When the count field was not edited, the stored
+ * anchors (count, last check-in, start date, count date) stay as they are; only the auto-reset
+ * rules below still apply.
+ */
 fun Streak.applyEdit(edit: StreakEdit, today: LocalDate): Streak {
     val yesterday = today.minus(1, DateTimeUnit.DAY)
-    val n = edit.count.coerceIn(0, MAX_VALUE)
     val shown = valueOn(today)
+    val n = if (edit.countChanged) edit.count.coerceIn(0, MAX_VALUE) else shown
     val autoReset = if (type == StreakType.DAYS_SINCE) autoReset else edit.autoReset
     val modeChanged = type == StreakType.TIMES && autoReset != this.autoReset
     var s = copy(
@@ -53,24 +62,34 @@ fun Streak.applyEdit(edit: StreakEdit, today: LocalDate): Streak {
         goal = edit.goal,
         autoReset = autoReset,
         goalReachedOn = if (edit.goalChanged || modeChanged) null else goalReachedOn,
+        // A daily mark must not stop the big celebration of a total goal (and the reverse).
+        celebrated = if (modeChanged) null else celebrated,
     )
     s = when (type) {
         StreakType.CHECK_IN -> {
             // Auto-reset on is not retroactive: an old last check-in moves to yesterday.
             val last = lastCheckIn?.let { if (autoReset && it < yesterday) yesterday else it }
-            s.copy(
-                count = n,
-                lastCheckIn = when {
-                    last != null && last >= today -> last
-                    n > 0 -> last ?: yesterday
-                    else -> null
-                },
-                endedNote = if (n != shown) null else endedNote,
-            )
+            if (!edit.countChanged) {
+                s.copy(lastCheckIn = last)
+            } else {
+                s.copy(
+                    count = n,
+                    lastCheckIn = when {
+                        last != null && last >= today -> last
+                        n > 0 -> last ?: yesterday
+                        else -> null
+                    },
+                    endedNote = if (n != shown) null else endedNote,
+                )
+            }
         }
 
-        StreakType.DAYS_SINCE -> s.copy(startDate = today.minus(n, DateTimeUnit.DAY))
-        StreakType.TIMES -> s.copy(count = n, countDate = today)
+        StreakType.DAYS_SINCE ->
+            if (!edit.countChanged) s else s.copy(startDate = today.minus(n, DateTimeUnit.DAY))
+
+        // A mode switch makes today's value the count from today on, edited or not.
+        StreakType.TIMES ->
+            if (!edit.countChanged && !modeChanged) s else s.copy(count = n, countDate = today)
     }
     return s
 }

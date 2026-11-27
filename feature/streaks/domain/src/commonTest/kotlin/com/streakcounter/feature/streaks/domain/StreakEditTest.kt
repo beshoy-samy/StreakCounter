@@ -26,7 +26,8 @@ class StreakEditTest {
         goal: Int? = null,
         goalChanged: Boolean = false,
         name: String? = null,
-    ) = StreakEdit(name, count, goal, autoReset, goalChanged)
+        countChanged: Boolean = true,
+    ) = StreakEdit(name, count, goal, autoReset, goalChanged, countChanged)
 
     @Test
     fun toStreak_checkIn_5_continues_today() {
@@ -187,5 +188,99 @@ class StreakEditTest {
     fun edit_daysSince_ignores_autoReset_flag() {
         val s = testStreak(StreakType.DAYS_SINCE, autoReset = false, startDate = today)
         assertThat(s.applyEdit(edit(count = 0, autoReset = true), today).autoReset).isFalse()
+    }
+
+    // ---- Count field untouched: the stored count wins over the number the sheet opened with ----
+
+    @Test
+    fun edit_times_untouched_count_keeps_a_newer_stored_count() {
+        // The sheet opened at 4; a widget tap made it 5 before the name-only save.
+        val s = testStreak(StreakType.TIMES, autoReset = false, count = 5, countDate = yesterday)
+        val e = s.applyEdit(edit(count = 4, autoReset = false, name = "Water", countChanged = false), today)
+        assertThat(e.count).isEqualTo(5)
+        assertThat(e.countDate).isEqualTo(yesterday)
+        assertThat(e.name).isEqualTo("Water")
+    }
+
+    @Test
+    fun edit_checkIn_untouched_count_keeps_a_checkin_made_while_the_sheet_was_open() {
+        val s = testStreak(StreakType.CHECK_IN, autoReset = true, count = 4, lastCheckIn = today)
+        val e = s.applyEdit(edit(count = 3, autoReset = true, name = "Read", countChanged = false), today)
+        assertThat(e.count).isEqualTo(4)
+        assertThat(e.lastCheckIn).isEqualTo(today)
+        assertThat(e.isDoneToday(today)).isTrue()
+    }
+
+    @Test
+    fun edit_checkIn_untouched_count_keeps_the_ended_note() {
+        val ended = testStreak(StreakType.CHECK_IN, autoReset = true, count = 12, lastCheckIn = LocalDate(2026, 11, 24))
+            .normalize(today)
+        val e = ended.applyEdit(edit(count = 12, autoReset = true, countChanged = false), today)
+        assertThat(e.valueOn(today)).isEqualTo(0)
+        assertThat(e.lastCheckIn).isNull()
+        assertThat(e.endedNote).isEqualTo(ended.endedNote)
+    }
+
+    @Test
+    fun edit_checkIn_untouched_count_autoReset_on_is_still_not_retroactive() {
+        val s = testStreak(StreakType.CHECK_IN, autoReset = false, count = 40, lastCheckIn = LocalDate(2026, 11, 24))
+        val e = s.applyEdit(edit(count = 39, autoReset = true, countChanged = false), today)
+        assertThat(e.count).isEqualTo(40)
+        assertThat(e.lastCheckIn).isEqualTo(yesterday)
+        assertThat(e.normalize(today).valueOn(today)).isEqualTo(40)
+    }
+
+    @Test
+    fun edit_daysSince_untouched_count_keeps_start_date_after_midnight() {
+        // Opened yesterday showing 10; saved today with only a new name.
+        val start = today.minus(11, DateTimeUnit.DAY)
+        val s = testStreak(StreakType.DAYS_SINCE, startDate = start)
+        val e = s.applyEdit(edit(count = 10, autoReset = false, name = "No smoking", countChanged = false), today)
+        assertThat(e.startDate).isEqualTo(start)
+        assertThat(e.valueOn(today)).isEqualTo(11)
+    }
+
+    @Test
+    fun edit_times_untouched_count_reset_on_keeps_today_total() {
+        val s = testStreak(StreakType.TIMES, autoReset = false, count = 41, countDate = yesterday)
+        val e = s.applyEdit(edit(count = 40, autoReset = true, countChanged = false), today)
+        assertThat(e.count).isEqualTo(41)
+        assertThat(e.countDate).isEqualTo(today)
+        assertThat(e.valueOn(LocalDate(2026, 11, 28))).isEqualTo(0)
+    }
+
+    @Test
+    fun edit_times_untouched_count_reset_off_keeps_today_count() {
+        val s = testStreak(StreakType.TIMES, autoReset = true, count = 7, countDate = today)
+        val e = s.applyEdit(edit(count = 6, autoReset = false, countChanged = false), today)
+        assertThat(e.count).isEqualTo(7)
+        assertThat(e.valueOn(LocalDate(2026, 11, 28))).isEqualTo(7)
+    }
+
+    // ---- Times mode switch and celebrations (finding 10) ----
+
+    @Test
+    fun edit_times_mode_switch_clears_celebrated() {
+        val s = testStreak(StreakType.TIMES, autoReset = true, goal = 8, count = 8, countDate = today)
+            .copy(celebrated = CelebrationMark(8, today))
+        val e = s.applyEdit(edit(count = 8, autoReset = false, goal = 8, countChanged = false), today)
+        assertThat(e.celebrated).isNull()
+        assertThat(e.goalReachedOn).isNull()
+    }
+
+    @Test
+    fun edit_times_daily_to_total_celebrates_big_when_the_total_reaches_the_same_goal() {
+        val daily = testStreak(StreakType.TIMES, autoReset = true, goal = 8, count = 8, countDate = today)
+            .markCelebrated(today)
+        val total = daily.applyEdit(edit(count = 8, autoReset = false, goal = 8, countChanged = false), today)
+        assertThat(total.pendingCelebration(today)?.size).isEqualTo(CelebrationSize.BIG)
+    }
+
+    @Test
+    fun edit_without_mode_switch_keeps_celebrated() {
+        val mark = CelebrationMark(8, null)
+        val s = testStreak(StreakType.TIMES, autoReset = false, goal = 8, count = 9, countDate = today).copy(celebrated = mark)
+        val e = s.applyEdit(edit(count = 9, autoReset = false, goal = 8, name = "x", countChanged = false), today)
+        assertThat(e.celebrated).isEqualTo(mark)
     }
 }

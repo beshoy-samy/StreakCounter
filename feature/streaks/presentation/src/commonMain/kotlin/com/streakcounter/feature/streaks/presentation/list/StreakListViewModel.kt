@@ -333,6 +333,7 @@ class StreakListViewModel(
                 autoReset = card.autoReset,
                 goalEdited = false,
                 touched = false,
+                countEdited = false,
             ),
         )
     }
@@ -351,8 +352,13 @@ class StreakListViewModel(
             // Type is fixed after creation.
             type = if (isEdit) current.type else changed.type,
             goalEdited = current.goalEdited || changed.goal != current.goal,
+            countEdited = current.countEdited || changed.startValue != current.startValue,
             touched = current.touched ||
-                changed.copy(goalEdited = current.goalEdited, touched = current.touched) != current,
+                changed.copy(
+                    goalEdited = current.goalEdited,
+                    touched = current.touched,
+                    countEdited = current.countEdited,
+                ) != current,
         )
         session.setDraft(next)
         // Errors shown after a save attempt follow the fields as they are fixed.
@@ -389,7 +395,16 @@ class StreakListViewModel(
         val autoReset = autoReset && type != StreakType.DAYS_SINCE
         val id = editingId ?: return StreakCommand.Create(NewStreak(name, type, count, goal, autoReset))
         val storedGoal = readyOrNull()?.cards?.firstOrNull { it.id == id }?.goal
-        return StreakCommand.Update(id, StreakEdit(name, count, goal, autoReset, goalChanged = goalEdited && goal != storedGoal))
+        // An untouched count field keeps the stored count: the sheet's number may be hours old.
+        val edit = StreakEdit(
+            name = name,
+            count = count,
+            goal = goal,
+            autoReset = autoReset,
+            goalChanged = goalEdited && goal != storedGoal,
+            countChanged = countEdited,
+        )
+        return StreakCommand.Update(id, edit)
     }
 
     // ---- Celebrations ----

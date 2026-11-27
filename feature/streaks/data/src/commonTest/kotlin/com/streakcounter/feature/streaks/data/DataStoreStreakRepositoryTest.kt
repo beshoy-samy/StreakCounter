@@ -192,7 +192,7 @@ class DataStoreStreakRepositoryTest {
         val repository = repository()
         val id = repository.create(new("Water", StreakType.TIMES, start = 3, goal = 3))
 
-        repository.execute(StreakCommand.Update(id, StreakEdit("Glasses", count = 4, goal = 3, autoReset = false, goalChanged = false)))
+        repository.execute(StreakCommand.Update(id, StreakEdit("Glasses", count = 4, goal = 3, autoReset = false, goalChanged = false, countChanged = true)))
         repository.execute(StreakCommand.Decrement(id))
         repository.execute(StreakCommand.MarkCelebrated(id))
 

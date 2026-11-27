@@ -41,7 +41,7 @@ class CelebrationTest {
     @Test
     fun new_goal_after_reached_can_celebrate_again() {
         val s = testStreak(StreakType.TIMES, goal = 30, count = 31, countDate = today).markCelebrated(today)
-        val bumped = s.applyEdit(StreakEdit(null, 31, 50, false, goalChanged = true), today)
+        val bumped = s.applyEdit(StreakEdit(null, 31, 50, false, goalChanged = true, countChanged = true), today)
         assertThat(bumped.pendingCelebration(today)).isNull()
         val reached = bumped.copy(count = 50)
         assertThat(reached.pendingCelebration(today)?.size).isEqualTo(CelebrationSize.BIG)

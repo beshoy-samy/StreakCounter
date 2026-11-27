@@ -626,7 +626,10 @@ class StreakListViewModelTest {
         h.act(this, StreakListAction.OnSave)
 
         assertThat(h.repo.executed.single()).isEqualTo(
-            StreakCommand.Update(idA, StreakEdit(name = "Lifts", count = 5, goal = 12, autoReset = false, goalChanged = true)),
+            StreakCommand.Update(
+                idA,
+                StreakEdit(name = "Lifts", count = 5, goal = 12, autoReset = false, goalChanged = true, countChanged = false),
+            ),
         )
         assertThat(h.ready.sheet).isNull()
     }
@@ -695,6 +698,90 @@ class StreakListViewModelTest {
         val saved = h.repo.current!!.first { it.id == idA }
         assertThat(saved.count).isEqualTo(6)
         assertThat(saved.countDate).isEqualTo(day1)
+    }
+
+    // ---- Edit sheet open while the count changes elsewhere (spec 4.1a) ----
+
+    @Test
+    fun widget_increment_while_sheet_is_open_survives_a_name_only_save() = transformTest {
+        val h = harness(listOf(times(count = 5)))
+        settle()
+        h.act(this, StreakListAction.OnCardClick(idA))
+        // A widget tap writes 6 while the sheet still shows 5.
+        h.repo.setStreaks(listOf(times(count = 6)))
+        settle()
+
+        h.act(this, StreakListAction.OnDraftChange(h.ready.sheet!!.draft.copy(name = "Lifts")))
+        h.act(this, StreakListAction.OnSave)
+
+        val saved = h.repo.current!!.single()
+        assertThat(saved.name).isEqualTo("Lifts")
+        assertThat(saved.count).isEqualTo(6)
+        assertThat((h.repo.executed.single() as StreakCommand.Update).edit.countChanged).isFalse()
+    }
+
+    @Test
+    fun check_in_made_while_sheet_is_open_survives_a_name_only_save() = transformTest {
+        val h = harness(listOf(checkIn(count = 3, lastCheckIn = day0.minus(1, DateTimeUnit.DAY), position = 0)))
+        settle()
+        h.act(this, StreakListAction.OnCardClick(idB))
+        h.act(this, StreakListAction.OnIncrement(idB))
+
+        h.act(this, StreakListAction.OnDraftChange(h.ready.sheet!!.draft.copy(name = "Books")))
+        h.act(this, StreakListAction.OnSave)
+
+        val saved = h.repo.current!!.single()
+        assertThat(saved.count).isEqualTo(4)
+        assertThat(saved.lastCheckIn).isEqualTo(day0)
+        assertThat(h.card(idB).doneToday).isTrue()
+    }
+
+    @Test
+    fun days_since_name_only_save_after_midnight_keeps_the_start_date() = transformTest {
+        val h = harness(listOf(daysSince(days = 10)))
+        settle()
+        h.act(this, StreakListAction.OnCardClick(idA))
+        h.today.advanceDays()
+        settle()
+
+        h.act(this, StreakListAction.OnDraftChange(h.ready.sheet!!.draft.copy(name = "No vaping")))
+        h.act(this, StreakListAction.OnSave)
+
+        val saved = h.repo.current!!.single()
+        assertThat(saved.startDate).isEqualTo(day0.minus(10, DateTimeUnit.DAY))
+        assertThat(h.card(idA).value).isEqualTo(11)
+    }
+
+    @Test
+    fun retry_of_a_failed_name_only_update_keeps_a_newer_count() = transformTest {
+        val h = harness(listOf(times(count = 5)))
+        settle()
+        h.act(this, StreakListAction.OnCardClick(idA))
+        h.act(this, StreakListAction.OnDraftChange(h.ready.sheet!!.draft.copy(name = "Lifts")))
+        h.repo.shouldReturnError = DataError.Local.WRITE_FAILED
+        h.act(this, StreakListAction.OnSave)
+        assertThat(h.ready.saveFailed).isTrue()
+
+        h.repo.shouldReturnError = null
+        h.repo.setStreaks(listOf(times(count = 7)))
+        settle()
+        h.act(this, StreakListAction.OnRetry)
+
+        val saved = h.repo.current!!.single()
+        assertThat(saved.name).isEqualTo("Lifts")
+        assertThat(saved.count).isEqualTo(7)
+    }
+
+    @Test
+    fun editing_the_count_field_marks_the_count_changed() = transformTest {
+        val h = harness(listOf(times(count = 5)))
+        settle()
+        h.act(this, StreakListAction.OnCardClick(idA))
+        h.act(this, StreakListAction.OnDraftChange(h.ready.sheet!!.draft.copy(startValue = "9")))
+        h.act(this, StreakListAction.OnSave)
+
+        assertThat((h.repo.executed.single() as StreakCommand.Update).edit.countChanged).isTrue()
+        assertThat(h.repo.current!!.single().count).isEqualTo(9)
     }
 
     // ---- Reorder ----

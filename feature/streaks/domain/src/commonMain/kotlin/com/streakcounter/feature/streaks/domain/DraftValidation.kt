@@ -12,6 +12,8 @@ data class StreakDraft(
     val autoReset: Boolean,
     val goalEdited: Boolean,
     val touched: Boolean,
+    /** The count field was changed since the sheet opened; otherwise a save keeps the stored count. */
+    val countEdited: Boolean = false,
 )
 
 enum class FieldError : Error {
