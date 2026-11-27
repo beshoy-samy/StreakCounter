@@ -1,0 +1,38 @@
+<resources>
+    <string name="widget_small_label">Serie</string>
+    <string name="widget_small_description">Eine Serie mit Plus und Minus</string>
+    <string name="widget_list_label">Alle Serien</string>
+    <string name="widget_list_description">Alle Serien mit Plus und Minus</string>
+
+    <string name="widget_open_app">StreakCounter öffnen</string>
+    <string name="widget_removed_small">Serie entfernt. Tippe, um eine andere zu wählen.</string>
+    <string name="widget_removed_large">Diese Serie wurde gelöscht. Tippe, um eine andere zu wählen.</string>
+    <string name="widget_pick_streak">Tippe, um eine Serie zu wählen</string>
+    <string name="widget_list_title">Serien</string>
+    <string name="widget_list_empty_title">Noch keine Serien</string>
+    <string name="widget_list_empty_body">Leg in der App eine an, dann erscheint sie hier.</string>
+
+    <string name="widget_to_go">noch %1$s</string>
+    <string name="widget_goal_reached">Ziel erreicht</string>
+    <string name="widget_since">seit %1$s</string>
+    <string name="widget_unit_today">heute</string>
+    <plurals name="widget_unit_days">
+        <item quantity="one">Tag</item>
+        <item quantity="other">Tage</item>
+    </plurals>
+    <plurals name="widget_unit_times">
+        <item quantity="one">Mal</item>
+        <item quantity="other">Mal</item>
+    </plurals>
+
+    <string name="widget_unnamed_check_in">Check-in-Serie</string>
+    <string name="widget_unnamed_days_since">Tage-seit-Serie</string>
+    <string name="widget_unnamed_times">Zähler</string>
+
+    <string name="widget_add_one">Eins mehr</string>
+    <string name="widget_take_one">Eins weniger</string>
+    <string name="widget_checked_in">Eingecheckt</string>
+    <string name="widget_add_one_to">Eins mehr bei %1$s</string>
+    <string name="widget_take_one_from">Eins weniger bei %1$s</string>
+    <string name="widget_checked_in_named">%1$s eingecheckt</string>
+</resources>

@@ -165,4 +165,11 @@
     <string name="discard_body">أدخلت بعض التفاصيل. الإغلاق الآن يمحوها.</string>
     <string name="keep_editing">تابع التعديل</string>
     <string name="discard">تجاهل</string>
+
+    <!-- Widget setup (Android): pick the streak a small widget shows -->
+    <string name="picker_title">اعرض في الأداة</string>
+    <string name="picker_cancel">إلغاء</string>
+    <string name="picker_add_widget">إضافة الأداة</string>
+    <string name="picker_empty_title">أنشئ سلسلة أولًا</string>
+    <string name="picker_empty_body">تحتاج الأداة إلى سلسلة لتعرضها. أنشئ واحدة ثم عُد.</string>
 </resources>

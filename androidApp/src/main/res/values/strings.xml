@@ -1,3 +1,41 @@
 <resources>
     <string name="app_name">StreakCounter</string>
+
+    <!-- Home-screen widgets (Glance can't read Compose resources; keep in step with feature/streaks/presentation). -->
+    <string name="widget_small_label">Streak</string>
+    <string name="widget_small_description">One streak with plus and minus</string>
+    <string name="widget_list_label">All streaks</string>
+    <string name="widget_list_description">Every streak with plus and minus</string>
+
+    <string name="widget_open_app">Open StreakCounter</string>
+    <string name="widget_removed_small">Streak removed. Tap to pick another.</string>
+    <string name="widget_removed_large">This streak was deleted. Tap to pick another.</string>
+    <string name="widget_pick_streak">Tap to pick a streak</string>
+    <string name="widget_list_title">Streaks</string>
+    <string name="widget_list_empty_title">No streaks yet</string>
+    <string name="widget_list_empty_body">Add one in the app and it shows up here.</string>
+
+    <string name="widget_to_go">%1$s to go</string>
+    <string name="widget_goal_reached">Goal reached</string>
+    <string name="widget_since">since %1$s</string>
+    <string name="widget_unit_today">today</string>
+    <plurals name="widget_unit_days">
+        <item quantity="one">day</item>
+        <item quantity="other">days</item>
+    </plurals>
+    <plurals name="widget_unit_times">
+        <item quantity="one">time</item>
+        <item quantity="other">times</item>
+    </plurals>
+
+    <string name="widget_unnamed_check_in">Check-in streak</string>
+    <string name="widget_unnamed_days_since">Days-since streak</string>
+    <string name="widget_unnamed_times">Count</string>
+
+    <string name="widget_add_one">Add one</string>
+    <string name="widget_take_one">Take one</string>
+    <string name="widget_checked_in">Checked in</string>
+    <string name="widget_add_one_to">Add one to %1$s</string>
+    <string name="widget_take_one_from">Take one from %1$s</string>
+    <string name="widget_checked_in_named">%1$s checked in</string>
 </resources>

@@ -479,7 +479,7 @@ private fun List<Streak>.inOrder(order: List<Uuid>): List<Streak> {
     return sortedBy { rank[it.id] ?: (order.size + it.position) }
 }
 
-private fun Streak.toCardUi(date: LocalDate): StreakCardUi {
+internal fun Streak.toCardUi(date: LocalDate): StreakCardUi {
     val value = valueOn(date)
     return StreakCardUi(
         id = id,

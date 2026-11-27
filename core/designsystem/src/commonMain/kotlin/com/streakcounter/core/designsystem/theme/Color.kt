@@ -5,7 +5,8 @@ import androidx.compose.ui.graphics.Color
 // Generated from docs/design/tokens.json (Dusk Ember): `{ramp.step}` refs resolved to hex.
 // Regenerate by hand when tokens change; the ref is kept in a trailing comment.
 
-internal object LightPalette {
+/** Light theme colors. Public for the Android home-screen widgets (Glance can't read MaterialTheme). */
+object LightPalette {
     val background = Color(0xFFFAF6F4) // {neutral.50}
     val onBackground = Color(0xFF21181B) // {neutral.900}
     val surface = Color(0xFFFFFFFF) // {neutral.0}
@@ -41,7 +42,8 @@ internal object LightPalette {
     val onWallpaper = Color(0xFFFAF6F4) // {neutral.50}
 }
 
-internal object DarkPalette {
+/** Dark theme colors. Public for the Android home-screen widgets. */
+object DarkPalette {
     val background = Color(0xFF170F12) // {neutral.950}
     val onBackground = Color(0xFFF3ECE8) // {neutral.100}
     val surface = Color(0xFF21181B) // {neutral.900}

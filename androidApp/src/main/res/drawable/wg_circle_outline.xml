@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- White 1 dp ring mask: the widget tints it. A vector, not a <shape>: a tinted stroke-only
+     GradientDrawable gets its empty fill tinted too. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="1"
+        android:pathData="M24,0.5a23.5,23.5 0,1 1,0 47a23.5,23.5 0,1 1,0 -47z" />
+</vector>

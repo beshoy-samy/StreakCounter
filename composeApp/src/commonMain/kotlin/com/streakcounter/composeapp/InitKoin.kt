@@ -10,15 +10,18 @@ import org.koin.dsl.KoinAppDeclaration
 /**
  * Starts Koin once per process. Safe to call again: a second call does nothing instead of
  * throwing KoinApplicationAlreadyStartedException. iOS calls it from `iOSApp.init` (Swift).
+ *
+ * [config] runs after the common modules are loaded, so modules it adds replace common bindings
+ * (Android swaps the no-op WidgetUpdater for its Glance one).
  */
 fun initKoin(config: KoinAppDeclaration? = null) {
     if (KoinPlatformTools.defaultContext().getOrNull() != null) return
     startKoin {
-        config?.invoke(this)
         modules(
             coreDataModule,
             streaksDataModule,
             streaksPresentationModule,
         )
+        config?.invoke(this)
     }
 }

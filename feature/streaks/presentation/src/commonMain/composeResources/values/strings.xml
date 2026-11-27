@@ -149,4 +149,11 @@
     <string name="discard_body">You’ve filled in some details. Closing now throws them away.</string>
     <string name="keep_editing">Keep editing</string>
     <string name="discard">Discard</string>
+
+    <!-- Widget setup (Android): pick the streak a small widget shows -->
+    <string name="picker_title">Show on widget</string>
+    <string name="picker_cancel">Cancel</string>
+    <string name="picker_add_widget">Add widget</string>
+    <string name="picker_empty_title">Create a streak first</string>
+    <string name="picker_empty_body">The widget needs a streak to show. Make one and come back.</string>
 </resources>

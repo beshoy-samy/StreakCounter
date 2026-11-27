@@ -44,6 +44,7 @@ okio = "3.17.0"
 assertk = "0.28.1"
 turbine = "1.2.1"
 robolectric = "4.16"
+junit = "4.13.2"
 androidxTestExtJunit = "1.3.0"
 
 [libraries]
@@ -116,6 +117,7 @@ compottie = { module = "io.github.alexzhirkevich:compottie", version.ref = "comp
 okio-fakefilesystem = { module = "com.squareup.okio:okio-fakefilesystem", version.ref = "okio" }
 assertk = { module = "com.willowtreeapps.assertk:assertk", version.ref = "assertk" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+junit = { module = "junit:junit", version.ref = "junit" }
 androidx-compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 

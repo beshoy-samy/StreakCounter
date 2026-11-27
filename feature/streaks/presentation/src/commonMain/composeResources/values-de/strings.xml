@@ -149,4 +149,11 @@
     <string name="discard_body">Du hast schon Angaben eingetragen. Wenn du jetzt schließt, gehen sie verloren.</string>
     <string name="keep_editing">Weiter bearbeiten</string>
     <string name="discard">Verwerfen</string>
+
+    <!-- Widget setup (Android): pick the streak a small widget shows -->
+    <string name="picker_title">Im Widget zeigen</string>
+    <string name="picker_cancel">Abbrechen</string>
+    <string name="picker_add_widget">Widget hinzufügen</string>
+    <string name="picker_empty_title">Leg zuerst eine Serie an</string>
+    <string name="picker_empty_body">Das Widget braucht eine Serie, die es zeigen kann. Leg eine an und komm zurück.</string>
 </resources>

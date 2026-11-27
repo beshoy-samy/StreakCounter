@@ -1,0 +1,46 @@
+<resources>
+    <string name="widget_small_label">سلسلة</string>
+    <string name="widget_small_description">سلسلة واحدة مع زر الزيادة والإنقاص</string>
+    <string name="widget_list_label">كل السلاسل</string>
+    <string name="widget_list_description">كل السلاسل مع زر الزيادة والإنقاص</string>
+
+    <string name="widget_open_app">افتح StreakCounter</string>
+    <string name="widget_removed_small">حُذفت السلسلة. اضغط لاختيار أخرى.</string>
+    <string name="widget_removed_large">حُذفت هذه السلسلة. اضغط لاختيار أخرى.</string>
+    <string name="widget_pick_streak">اضغط لاختيار سلسلة</string>
+    <string name="widget_list_title">السلاسل</string>
+    <string name="widget_list_empty_title">لا توجد سلاسل بعد</string>
+    <string name="widget_list_empty_body">أضف سلسلة في التطبيق وستظهر هنا.</string>
+
+    <string name="widget_to_go">باقي %1$s</string>
+    <string name="widget_goal_reached">تم بلوغ الهدف</string>
+    <string name="widget_since">منذ %1$s</string>
+    <string name="widget_unit_today">اليوم</string>
+    <plurals name="widget_unit_days">
+        <item quantity="zero">يوم</item>
+        <item quantity="one">يوم</item>
+        <item quantity="two">يومان</item>
+        <item quantity="few">أيام</item>
+        <item quantity="many">يومًا</item>
+        <item quantity="other">يوم</item>
+    </plurals>
+    <plurals name="widget_unit_times">
+        <item quantity="zero">مرة</item>
+        <item quantity="one">مرة</item>
+        <item quantity="two">مرتان</item>
+        <item quantity="few">مرات</item>
+        <item quantity="many">مرة</item>
+        <item quantity="other">مرة</item>
+    </plurals>
+
+    <string name="widget_unnamed_check_in">سلسلة تسجيل يومي</string>
+    <string name="widget_unnamed_days_since">سلسلة أيام منذ</string>
+    <string name="widget_unnamed_times">عدّاد</string>
+
+    <string name="widget_add_one">زيادة واحد</string>
+    <string name="widget_take_one">إنقاص واحد</string>
+    <string name="widget_checked_in">تم التسجيل</string>
+    <string name="widget_add_one_to">زيادة %1$s</string>
+    <string name="widget_take_one_from">إنقاص %1$s</string>
+    <string name="widget_checked_in_named">تم تسجيل %1$s</string>
+</resources>

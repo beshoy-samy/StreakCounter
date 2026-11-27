@@ -1,14 +1,13 @@
 package com.streakcounter
 
 import android.app.Application
-import com.streakcounter.composeapp.initKoin
-import org.koin.android.ext.koin.androidContext
+import com.streakcounter.widget.MidnightRefresh
 
 class StreakCounterApplication : Application() {
     override fun onCreate() {
         super.onCreate()
-        initKoin {
-            androidContext(this@StreakCounterApplication)
-        }
+        startAppKoin(this)
+        // Arms the midnight widget refresh if any widget is placed (cheap, idempotent).
+        MidnightRefresh.sync(this)
     }
 }
