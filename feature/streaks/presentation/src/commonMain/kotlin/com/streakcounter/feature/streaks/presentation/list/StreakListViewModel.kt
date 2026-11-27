@@ -219,12 +219,14 @@ class StreakListViewModel(
     /**
      * Runs [command] against the stored file. Success refreshes the widgets and offers undo for a
      * reset or delete; failure keeps [command] for "Try again" (which replays it, never an
-     * in-memory list) and counts towards the T4 banner.
+     * in-memory list) and counts towards the T4 banner. A later success withdraws that "Try
+     * again": replaying an old command after the user moved on could apply a change twice.
      */
     private suspend fun execute(command: StreakCommand): Boolean =
         when (val result = repository.execute(command)) {
             is Result.Success -> {
                 failuresInARow = 0
+                session.setFailed(null)
                 val before = result.data
                 when {
                     before == null -> Unit

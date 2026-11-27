@@ -376,6 +376,24 @@ class StreakListViewModelTest {
     }
 
     @Test
+    fun a_later_success_withdraws_the_stale_try_again() = transformTest {
+        val h = harness(listOf(times()))
+        settle()
+        h.repo.shouldReturnError = DataError.Local.WRITE_FAILED
+        h.act(this, StreakListAction.OnIncrement(idA))
+        assertThat(h.ready.saveFailed).isTrue()
+
+        h.repo.shouldReturnError = null
+        h.act(this, StreakListAction.OnIncrement(idA))
+
+        assertThat(h.ready.saveFailed).isFalse()
+        assertThat(h.session.failedCommand.value).isNull()
+        h.act(this, StreakListAction.OnRetry)
+        assertThat(h.card(idA).value).isEqualTo(6)
+        assertThat(h.repo.executed).containsExactly(StreakCommand.Increment(idA), StreakCommand.Increment(idA))
+    }
+
+    @Test
     fun save_failed_dismiss_clears_the_snackbar_without_replaying() = transformTest {
         val h = harness(listOf(times()))
         settle()
