@@ -24,7 +24,6 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
-import org.koin.core.context.GlobalContext
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
@@ -102,16 +101,39 @@ class MidnightRefreshReceiver : BroadcastReceiver() {
         val app = context.applicationContext
         val pending = goAsync()
         CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
-            try {
-                // Broadcasts get about 10 s: finish well before.
-                withTimeoutOrNull(8.seconds) {
-                    val koin = GlobalContext.get()
-                    runMidnightRefresh(koin.get(), koin.get(), koin.get())
-                }
-            } finally {
-                MidnightRefresh.sync(app)
-                pending.finish()
-            }
+            handleMidnightBroadcast(
+                refresh = {
+                    val deps = widgetDependencies(app)
+                    runMidnightRefresh(deps.repository, deps.today, deps.widgets)
+                },
+                rearm = { MidnightRefresh.sync(app) },
+                finish = pending::finish,
+            )
         }
+    }
+}
+
+/** Broadcasts get about 10 s: finish well before. */
+private val BROADCAST_BUDGET = 8.seconds
+
+/**
+ * Runs [refresh] within the broadcast budget, then [rearm], then always [finish]. Nothing thrown
+ * escapes: this runs in a background coroutine with no handler, where an exception would kill
+ * the process while the user isn't even looking at the app.
+ */
+internal suspend fun handleMidnightBroadcast(refresh: suspend () -> Unit, rearm: () -> Unit, finish: () -> Unit) {
+    try {
+        withTimeoutOrNull(BROADCAST_BUDGET) { refresh() }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        // The widgets keep what they show; the next refresh catches up. Never log streak content.
+    } finally {
+        try {
+            rearm()
+        } catch (e: Exception) {
+            // Boot or the next widget change arms it again.
+        }
+        finish()
     }
 }

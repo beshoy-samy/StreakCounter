@@ -1,5 +1,6 @@
 package com.streakcounter.widget
 
+import android.app.Activity
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Intent
@@ -27,6 +28,8 @@ import com.streakcounter.core.domain.Today
 import com.streakcounter.feature.streaks.domain.StreakRepository
 import com.streakcounter.feature.streaks.presentation.widget.WidgetPickerScreen
 import com.streakcounter.feature.streaks.presentation.widget.WidgetPickerState
+import com.streakcounter.startAppKoin
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import kotlin.uuid.Uuid
@@ -43,6 +46,8 @@ class WidgetSetupActivity : ComponentActivity() {
     private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Before the first inject() read; a no-op once Application.onCreate has started Koin.
+        startAppKoin(this)
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         appWidgetId = intent?.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID)
@@ -95,12 +100,14 @@ class WidgetSetupActivity : ComponentActivity() {
 
     private fun confirm(streakId: String) {
         lifecycleScope.launch {
-            val glanceId = GlanceAppWidgetManager(this@WidgetSetupActivity).getGlanceIdBy(appWidgetId)
-            updateAppWidgetState(this@WidgetSetupActivity, glanceId) { prefs ->
-                prefs[SmallStreakWidget.streakIdKey] = streakId
+            val result = storeWidgetChoice {
+                val glanceId = GlanceAppWidgetManager(this@WidgetSetupActivity).getGlanceIdBy(appWidgetId)
+                updateAppWidgetState(this@WidgetSetupActivity, glanceId) { prefs ->
+                    prefs[SmallStreakWidget.streakIdKey] = streakId
+                }
+                SmallStreakWidget().update(this@WidgetSetupActivity, glanceId)
             }
-            SmallStreakWidget().update(this@WidgetSetupActivity, glanceId)
-            setResult(RESULT_OK, resultIntent())
+            setResult(result, resultIntent())
             finish()
         }
     }
@@ -112,4 +119,18 @@ class WidgetSetupActivity : ComponentActivity() {
         val provider = AppWidgetManager.getInstance(this).getAppWidgetInfo(id)?.provider ?: return false
         return provider == ComponentName(this, SmallStreakWidgetReceiver::class.java)
     }
+}
+
+/**
+ * Runs [store] and returns the activity result. RESULT_CANCELED when it fails: the widget was
+ * removed while the screen was open (getGlanceIdBy throws IllegalArgumentException) or its state
+ * couldn't be written (IOException). An uncaught throw here would crash the setup screen.
+ */
+internal suspend fun storeWidgetChoice(store: suspend () -> Unit): Int = try {
+    store()
+    Activity.RESULT_OK
+} catch (e: CancellationException) {
+    throw e
+} catch (e: Exception) {
+    Activity.RESULT_CANCELED
 }

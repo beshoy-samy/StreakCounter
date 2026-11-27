@@ -6,6 +6,7 @@ import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.Preferences
@@ -42,12 +43,9 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import com.streakcounter.MainActivity
 import com.streakcounter.R
-import com.streakcounter.core.domain.Today
 import com.streakcounter.core.presentation.format.formatCount
 import com.streakcounter.core.presentation.format.formatShortDate
-import com.streakcounter.feature.streaks.domain.StreakRepository
 import com.streakcounter.feature.streaks.domain.StreakType
-import org.koin.core.context.GlobalContext
 
 /**
  * One chosen streak (spec 4.5): 2×1 shows name, number, minus and plus; 2×2 adds the goal hint.
@@ -61,13 +59,14 @@ class SmallStreakWidget : GlanceAppWidget() {
     override val sizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        // Koin is started in Application.onCreate, which runs before any widget code.
-        val koin = GlobalContext.get()
-        val repository = koin.get<StreakRepository>()
-        val today = koin.get<Today>()
+        val deps = widgetDependencies(context)
+        val repository = deps.repository
+        val today = deps.today
+        // The process may have slept through midnight (the day tick doesn't run in deep sleep).
+        today.refresh()
         val appWidgetId = GlanceAppWidgetManager(context).getAppWidgetId(id)
         provideContent {
-            val read by repository.streaks.collectAsState(initial = null)
+            val read by remember { widgetReads(repository) }.collectAsState(initial = null)
             val date by today.date.collectAsState()
             val streakId = currentState<Preferences>()[streakIdKey]
             SmallWidgetContent(smallWidgetUi(read, streakId, date), appWidgetId)

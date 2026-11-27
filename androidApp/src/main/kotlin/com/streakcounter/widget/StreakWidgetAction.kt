@@ -13,21 +13,20 @@ import com.streakcounter.feature.streaks.domain.WidgetUpdater
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
-import org.koin.core.context.GlobalContext
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.Uuid
 
 /**
  * A widget's + or − tap. Glance creates it by reflection, so it reads its dependencies from Koin
- * (started in Application.onCreate, before any widget code runs).
+ * ([widgetDependencies] starts Koin if Application.onCreate hasn't yet).
  */
 class StreakWidgetAction : ActionCallback {
     override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
-        val koin = GlobalContext.get()
+        val deps = widgetDependencies(context)
         runWidgetCommand(
-            repository = koin.get<StreakRepository>(),
-            today = koin.get<Today>(),
-            widgets = koin.get<WidgetUpdater>(),
+            repository = deps.repository,
+            today = deps.today,
+            widgets = deps.widgets,
             streakId = parameters[streakIdKey],
             op = parameters[opKey],
         )

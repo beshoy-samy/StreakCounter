@@ -7,7 +7,8 @@ import kotlinx.coroutines.CancellationException
 
 /**
  * Redraws both widget types. Never throws (cancellation aside): a failing redraw must not break
- * the command that was already saved; widgets catch up on their next update.
+ * the command that was already saved; widgets catch up on their next update. It first tells
+ * running widget sessions to read the file again ([WidgetRefreshSignal]).
  */
 class GlanceWidgetUpdater internal constructor(
     private val updates: List<suspend () -> Unit>,
@@ -15,6 +16,7 @@ class GlanceWidgetUpdater internal constructor(
 
     constructor(context: Context) : this(
         listOf(
+            { WidgetRefreshSignal.bump() },
             { SmallStreakWidget().updateAll(context) },
             { StreakListWidget().updateAll(context) },
         ),

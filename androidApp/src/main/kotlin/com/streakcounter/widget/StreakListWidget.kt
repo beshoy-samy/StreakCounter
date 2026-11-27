@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.glance.ColorFilter
@@ -36,11 +37,8 @@ import androidx.glance.layout.width
 import androidx.glance.text.Text
 import com.streakcounter.MainActivity
 import com.streakcounter.R
-import com.streakcounter.core.domain.Today
 import com.streakcounter.core.presentation.format.formatCount
 import com.streakcounter.core.presentation.format.formatDate
-import com.streakcounter.feature.streaks.domain.StreakRepository
-import org.koin.core.context.GlobalContext
 
 /** Every streak in app order (spec 4.5), each row with outline, number and −/+ (Days since: number only). */
 class StreakListWidget : GlanceAppWidget() {
@@ -49,11 +47,13 @@ class StreakListWidget : GlanceAppWidget() {
     override val sizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val koin = GlobalContext.get()
-        val repository = koin.get<StreakRepository>()
-        val today = koin.get<Today>()
+        val deps = widgetDependencies(context)
+        val repository = deps.repository
+        val today = deps.today
+        // The process may have slept through midnight (the day tick doesn't run in deep sleep).
+        today.refresh()
         provideContent {
-            val read by repository.streaks.collectAsState(initial = null)
+            val read by remember { widgetReads(repository) }.collectAsState(initial = null)
             val date by today.date.collectAsState()
             ListWidgetContent(listWidgetUi(read, date))
         }

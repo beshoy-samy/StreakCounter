@@ -3,14 +3,10 @@ package com.streakcounter.widget
 import android.app.Application
 import assertk.assertThat
 import assertk.assertions.isEqualTo
-import assertk.assertions.isInstanceOf
-import com.streakcounter.startAppKoin
-import com.streakcounter.feature.streaks.domain.WidgetUpdater
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.koin.core.context.GlobalContext
 import org.koin.core.context.stopKoin
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
@@ -25,10 +21,12 @@ class GlanceWidgetUpdaterTest {
     }
 
     @Test
-    fun android_koin_binds_the_glance_updater_over_the_common_no_op() {
-        startAppKoin(RuntimeEnvironment.getApplication())
+    fun update_all_tells_running_widget_sessions_to_read_again() = runTest {
+        val before = WidgetRefreshSignal.generation.value
 
-        assertThat(GlobalContext.get().get<WidgetUpdater>()).isInstanceOf<GlanceWidgetUpdater>()
+        GlanceWidgetUpdater(RuntimeEnvironment.getApplication()).updateAll()
+
+        assertThat(WidgetRefreshSignal.generation.value).isEqualTo(before + 1)
     }
 
     @Test

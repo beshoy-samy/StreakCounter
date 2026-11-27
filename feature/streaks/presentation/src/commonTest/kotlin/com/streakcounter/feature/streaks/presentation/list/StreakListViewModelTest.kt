@@ -195,6 +195,30 @@ class StreakListViewModelTest {
     }
 
     @Test
+    fun try_again_that_reads_the_file_redraws_the_widgets() = transformTest {
+        val h = harness(readError = DataError.Local.KEY_UNAVAILABLE)
+        settle()
+        h.repo.emitReadError(DataError.Local.KEY_UNAVAILABLE)
+        h.act(this, StreakListAction.OnRetryOpen)
+        // Still failing: the widgets keep "Open StreakCounter", nothing to redraw.
+        assertThat((h.widgets as FakeWidgetUpdater).updateAllCalls).isEqualTo(0)
+
+        h.repo.setStreaks(listOf(times()))
+        h.act(this, StreakListAction.OnRetryOpen)
+
+        assertThat(h.ready.cards.map { it.id }).containsExactly(idA)
+        assertThat((h.widgets as FakeWidgetUpdater).updateAllCalls).isEqualTo(1)
+    }
+
+    @Test
+    fun a_normal_open_does_not_redraw_the_widgets() = transformTest {
+        val h = harness(listOf(times()))
+        settle()
+
+        assertThat((h.widgets as FakeWidgetUpdater).updateAllCalls).isEqualTo(0)
+    }
+
+    @Test
     fun start_fresh_confirm_empties_the_list() = transformTest {
         val h = harness(readError = DataError.Local.UNREADABLE)
         settle()

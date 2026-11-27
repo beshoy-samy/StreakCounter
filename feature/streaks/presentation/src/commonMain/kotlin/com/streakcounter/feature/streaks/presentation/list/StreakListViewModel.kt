@@ -82,6 +82,9 @@ class StreakListViewModel(
 
     private var undoTimer: Job? = null
 
+    /** The last read failed; widgets then show "Open StreakCounter" until they are redrawn. */
+    private var lastReadFailed = false
+
     // In-flight guards: a second tap while the first write runs is ignored (no duplicate Create,
     // no second reset). Checked and set on the main thread, before anything is launched.
     private var saveJob: Job? = null
@@ -93,7 +96,14 @@ class StreakListViewModel(
         dispatcher = dispatcher,
     ) {
         val read by remember(openAttempt) {
-            repository.streaks.onEach { if (it is Result.Success) keyRetries = 0 }
+            repository.streaks.onEach { result ->
+                if (result is Result.Success) {
+                    keyRetries = 0
+                    // The file reads again (Try again worked): widgets still show the error.
+                    if (lastReadFailed) refreshWidgets()
+                }
+                lastReadFailed = result is Result.Error
+            }
         }.collectAsState(initial = null)
         val date by today.date.collectAsState()
 
