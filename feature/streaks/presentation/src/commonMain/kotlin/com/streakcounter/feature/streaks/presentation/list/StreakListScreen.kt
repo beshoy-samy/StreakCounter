@@ -62,6 +62,7 @@ import com.streakcounter.feature.streaks.presentation.list.components.SwipeToDel
 import com.streakcounter.feature.streaks.presentation.list.components.UnreadableState
 import com.streakcounter.feature.streaks.presentation.list.components.streakDisplayName
 import com.streakcounter.feature.streaks.presentation.session.UndoKind
+import com.streakcounter.feature.streaks.presentation.sheet.StreakSheet
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
@@ -137,7 +138,8 @@ fun StreakListScreen(
 
     SnackbarEffect(ready, snackbarHost, onAction)
 
-    // Task 10 renders the create/edit sheet here from `ready.sheet`.
+    ready?.sheet?.let { StreakSheet(it, onAction) }
+
     // Task 11 renders the celebration overlay (and the daily-goal snackbar) here from
     // `ready.celebration` / `ready.dailyGoalHit`.
 }

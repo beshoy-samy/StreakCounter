@@ -95,4 +95,50 @@
     <!-- Reorder -->
     <string name="reorder_title">Drag to reorder</string>
     <string name="reorder_done">Done</string>
+
+    <!-- Create / edit sheet -->
+    <string name="sheet_edit_title">Edit streak</string>
+    <string name="sheet_close">Close</string>
+    <string name="field_name">Name</string>
+    <string name="field_name_optional">Name (optional)</string>
+    <string name="field_name_placeholder">e.g. Gym, Read 20 pages</string>
+    <string name="field_type">Type</string>
+    <string name="start_check_in">Days already done</string>
+    <string name="start_days_since">Started how many days ago</string>
+    <string name="start_days_since_helper">0 means today</string>
+    <string name="start_times">Start at</string>
+    <string name="start_edit_count">Current count</string>
+    <string name="start_edit_days_so_far">Days so far</string>
+    <string name="goal_label">Goal (optional)</string>
+    <string name="goal_label_daily">Daily goal (optional)</string>
+    <string name="goal_placeholder">e.g. 30</string>
+    <string name="goal_helper_check_in">Days in a row</string>
+    <string name="goal_helper_days">Days</string>
+    <string name="goal_helper_per_day">Per day</string>
+    <string name="goal_to_go">%1$s to go</string>
+    <string name="goal_reached_hint">Goal reached on %1$s. Type a bigger number for a new one.</string>
+    <string name="locked_type">Type: %1$s. Can’t be changed after creating.</string>
+    <string name="callout_since_title">Counts on its own</string>
+    <string name="callout_since_body">Grows by one every day. Tap reset if you slip.</string>
+    <string name="switch_break_title">Break the streak if I miss a day</string>
+    <string name="switch_break_body">Back to 0 after a full day without a check-in</string>
+    <string name="switch_midnight_title">Reset at midnight</string>
+    <string name="switch_midnight_body">Starts again from 0 every day</string>
+    <string name="sheet_save_new">Save streak</string>
+    <string name="sheet_save_edit">Save changes</string>
+    <string name="sheet_delete">Delete streak</string>
+
+    <!-- Field errors (T1) -->
+    <string name="error_enter_number">Enter a number</string>
+    <string name="error_whole_number">Use a whole number</string>
+    <string name="error_over_max">Use %1$s or less</string>
+    <string name="error_goal_not_above_count">Make it more than %1$s</string>
+    <string name="error_goal_zero">Use 1 or more</string>
+    <string name="error_goal_not_number">Enter a number, or leave it empty</string>
+
+    <!-- Discard (T6) -->
+    <string name="discard_title">Discard this streak?</string>
+    <string name="discard_body">You’ve filled in some details. Closing now throws them away.</string>
+    <string name="keep_editing">Keep editing</string>
+    <string name="discard">Discard</string>
 </resources>

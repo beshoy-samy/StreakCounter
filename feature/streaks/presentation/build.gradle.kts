@@ -11,6 +11,8 @@ kotlin {
             implementation(libs.appstate.transform)
             implementation(libs.appstate.statestore)
             implementation(libs.kotlinx.datetime)
+            // AdaptiveBottomSheet: Material sheet on Android, native sheet on iOS.
+            implementation(libs.calf.ui)
         }
         commonTest.dependencies {
             implementation(projects.core.testing)
