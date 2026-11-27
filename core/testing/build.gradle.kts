@@ -7,6 +7,8 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(projects.core.domain)
+            // FakeAead implements core:data's Aead.
+            api(projects.core.data)
             api(libs.kotlin.test)
             api(libs.assertk)
             api(libs.turbine)
