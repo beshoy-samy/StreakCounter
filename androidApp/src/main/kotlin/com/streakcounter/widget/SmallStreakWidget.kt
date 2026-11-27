@@ -55,7 +55,10 @@ import org.koin.core.context.GlobalContext
  */
 class SmallStreakWidget : GlanceAppWidget() {
 
-    override val sizeMode = SizeMode.Responsive(setOf(SIZE_2X1, SIZE_2X2))
+    // Exact, not Responsive: LocalSize is then the real widget size, so the goal outline mask is
+    // drawn 1:1 instead of stretched from a size bucket (which thickened the 3 dp stroke). The
+    // 2×1 / 2×2 layout still switches on height (SIZE_2X2).
+    override val sizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         // Koin is started in Application.onCreate, which runs before any widget code.
@@ -72,7 +75,10 @@ class SmallStreakWidget : GlanceAppWidget() {
     }
 
     companion object {
+        /** Smallest 2×1 (the widget's min size). */
         val SIZE_2X1 = DpSize(110.dp, 40.dp)
+
+        /** From this height on, the 2×2 layout (big number, hint, buttons below). */
         val SIZE_2X2 = DpSize(110.dp, 110.dp)
 
         val streakIdKey = stringPreferencesKey("streak_id")

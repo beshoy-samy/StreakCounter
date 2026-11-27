@@ -4,7 +4,6 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
-import android.graphics.PathMeasure
 import android.graphics.RectF
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.Dp
@@ -21,8 +20,8 @@ import android.util.LayoutDirection
 
 /**
  * Glance can't draw paths, so the goal outline (spec 6.6: rounded rect from the top-start corner,
- * clockwise, mirrored for RTL) is drawn into two white ALPHA_8 masks with android.graphics: the
- * full track and the progress slice. Each is shown as an Image tinted with a day/night
+ * clockwise, mirrored for RTL; geometry in [RoundedRectOutline]) is drawn into two white ALPHA_8
+ * masks at the widget's real size (no stretching): the full track and the progress slice. Each is shown as an Image tinted with a day/night
  * [ColorProvider], so the theme still switches without a redraw. Masks are drawn at most at
  * [MAX_SCALE] px per dp to stay well inside the RemoteViews bitmap budget.
  */
@@ -47,9 +46,15 @@ internal object OutlineBitmap {
         if (end <= 0f) return bitmap
 
         val strokePx = stroke.value * scale
+        // Stroke is centered on the path: inset by half so it stays inside the bitmap.
         val inset = strokePx / 2f
-        val box = RectF(inset, inset, w - inset, h - inset)
-        val radius = (cornerRadius.value * scale - inset).coerceAtLeast(0f)
+        val outline = RoundedRectOutline(
+            left = inset,
+            top = inset,
+            right = w - inset,
+            bottom = h - inset,
+            radius = (cornerRadius.value * scale - inset).coerceAtLeast(0f),
+        )
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
             strokeWidth = strokePx
@@ -59,30 +64,27 @@ internal object OutlineBitmap {
         val canvas = Canvas(bitmap)
         if (rtl) canvas.scale(-1f, 1f, w / 2f, h / 2f)
         if (end >= 1f) {
-            canvas.drawRoundRect(box, radius, radius, paint)
+            val r = outline.radius
+            canvas.drawRoundRect(RectF(inset, inset, w - inset, h - inset), r, r, paint)
         } else {
-            val full = outlinePath(box, radius)
-            val measure = PathMeasure(full, false)
-            val slice = Path()
-            measure.getSegment(0f, measure.length * end, slice, true)
-            canvas.drawPath(slice, paint)
+            canvas.drawPath(outline.slice(end).toPath(), paint)
         }
         return bitmap
     }
 
-    /** Closed rounded rect starting where the top-start radius ends, clockwise (LTR). */
-    private fun outlinePath(box: RectF, r: Float): Path = Path().apply {
-        val d = 2 * r
-        moveTo(box.left + r, box.top)
-        lineTo(box.right - r, box.top)
-        arcTo(RectF(box.right - d, box.top, box.right, box.top + d), -90f, 90f, false)
-        lineTo(box.right, box.bottom - r)
-        arcTo(RectF(box.right - d, box.bottom - d, box.right, box.bottom), 0f, 90f, false)
-        lineTo(box.left + r, box.bottom)
-        arcTo(RectF(box.left, box.bottom - d, box.left + d, box.bottom), 90f, 90f, false)
-        lineTo(box.left, box.top + r)
-        arcTo(RectF(box.left, box.top, box.left + d, box.top + d), 180f, 90f, false)
-        close()
+    private fun List<RoundedRectOutline.Piece>.toPath(): Path = Path().also { path ->
+        forEachIndexed { index, piece ->
+            when (piece) {
+                is RoundedRectOutline.Piece.Line -> {
+                    if (index == 0) path.moveTo(piece.x0, piece.y0)
+                    path.lineTo(piece.x1, piece.y1)
+                }
+                is RoundedRectOutline.Piece.Arc -> {
+                    val oval = RectF(piece.cx - piece.r, piece.cy - piece.r, piece.cx + piece.r, piece.cy + piece.r)
+                    path.arcTo(oval, piece.startDeg, piece.sweepDeg, index == 0)
+                }
+            }
+        }
     }
 }
 
