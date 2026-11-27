@@ -1,2 +1,10 @@
 .superpowers/
 .DS_Store
+build/
+.gradle/
+.kotlin/
+local.properties
+*.xcuserstate
+xcuserdata/
+.idea/
+*.iml
