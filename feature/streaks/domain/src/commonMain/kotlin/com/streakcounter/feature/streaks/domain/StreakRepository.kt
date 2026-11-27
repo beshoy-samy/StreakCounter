@@ -26,4 +26,13 @@ interface StreakRepository {
      * Never deletes on KEY_UNAVAILABLE or UNKNOWN (returns that error).
      */
     suspend fun startFresh(): EmptyResult<DataError.Local>
+
+    /**
+     * The "Start fresh" offered after the key stayed unavailable through 3 retries (R15/R16).
+     * Reads first: a readable file is never touched (Success, nothing deleted). On KEY_UNAVAILABLE
+     * or UNREADABLE it deletes the encryption key and then the file, so the next write starts
+     * over with a new key and an empty list. Any other read failure deletes nothing (returns it).
+     * Irreversible: every stored streak is gone.
+     */
+    suspend fun resetUnreadableStorage(): EmptyResult<DataError.Local>
 }

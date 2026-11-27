@@ -7,4 +7,7 @@ internal interface KeyStorage {
 
     /** Stores [key]. Returns false when a key is already stored (it is left unchanged). Throws on any other failure. */
     fun add(key: ByteArray): Boolean
+
+    /** Removes the stored key; no-op when none is stored. Throws on any other failure. */
+    fun delete()
 }

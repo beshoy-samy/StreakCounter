@@ -14,6 +14,9 @@ sealed interface StreakListAction {
 
     /** "Try again" on the save-failed snackbar: replays the failed command. */
     data object OnRetry : StreakListAction
+
+    /** The save-failed snackbar timed out or was swiped away: forget the failed command. */
+    data object OnSaveFailedDismiss : StreakListAction
     data class OnCardClick(val id: Uuid) : StreakListAction
     data object OnNewClick : StreakListAction
     data class OnDraftChange(val draft: StreakDraft) : StreakListAction

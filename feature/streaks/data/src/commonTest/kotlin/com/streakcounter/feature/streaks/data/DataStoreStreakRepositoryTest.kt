@@ -42,6 +42,7 @@ import okio.IOException
 import okio.Path
 import okio.Path.Companion.toPath
 import okio.Sink
+import okio.Source
 import okio.fakefilesystem.FakeFileSystem
 import kotlin.random.Random
 import kotlin.test.Test
@@ -338,6 +339,66 @@ class DataStoreStreakRepositoryTest {
         assertThat(fileBytes().toList()).isEqualTo(onDisk.toList())
     }
 
+    // R16: the reset behind R15's "Start fresh" for a key that stays unavailable.
+    @Test
+    fun resetUnreadableStorage_on_a_readable_file_changes_nothing() = runTest {
+        val repository = repository()
+        repository.create(new("Gym"))
+        val onDisk = fileBytes()
+
+        assertThat(repository.resetUnreadableStorage()).isEqualTo(Result.Success(Unit))
+
+        assertThat(fileBytes().toList()).isEqualTo(onDisk.toList())
+        assertThat(aead.deleteKeyCalls).isEqualTo(0)
+        assertThat(repository.list().map { it.name }).containsExactly("Gym")
+    }
+
+    @Test
+    fun resetUnreadableStorage_with_key_unavailable_deletes_file_and_key_then_create_works() = runTest {
+        val firstScope = childScope()
+        repository(firstScope).create(new("Gym"))
+        firstScope.coroutineContext.job.cancelAndJoin()
+        aead.keyUnavailable = true
+        val repository = repository()
+        assertThat(repository.streaks.first()).isEqualTo(Result.Error(DataError.Local.KEY_UNAVAILABLE))
+
+        assertThat(repository.resetUnreadableStorage()).isEqualTo(Result.Success(Unit))
+
+        assertThat(aead.deleteKeyCalls).isEqualTo(1)
+        assertThat(fileSystem.exists(path)).isFalse()
+        assertThat(repository.streaks.first()).isEqualTo(Result.Success(emptyList()))
+        repository.create(new("Water"))
+        assertThat(repository.list().map { it.name }).containsExactly("Water")
+    }
+
+    @Test
+    fun resetUnreadableStorage_on_an_unreadable_file_deletes_file_and_key() = runTest {
+        writeFile(byteArrayOf(1) + Random.nextBytes(80))
+        val repository = repository()
+
+        assertThat(repository.resetUnreadableStorage()).isEqualTo(Result.Success(Unit))
+
+        assertThat(aead.deleteKeyCalls).isEqualTo(1)
+        assertThat(fileSystem.exists(path)).isFalse()
+        assertThat(repository.streaks.first()).isEqualTo(Result.Success(emptyList()))
+    }
+
+    @Test
+    fun resetUnreadableStorage_never_deletes_on_a_transient_read_failure() = runTest {
+        val firstScope = childScope()
+        repository(firstScope).create(new("Gym"))
+        firstScope.coroutineContext.job.cancelAndJoin()
+        val onDisk = fileBytes()
+        fileSystem.failReads = true
+        val repository = repository()
+
+        assertThat(repository.resetUnreadableStorage()).isEqualTo(Result.Error(DataError.Local.UNKNOWN))
+
+        fileSystem.failReads = false
+        assertThat(fileBytes().toList()).isEqualTo(onDisk.toList())
+        assertThat(aead.deleteKeyCalls).isEqualTo(0)
+    }
+
     @Test
     fun key_unavailable_on_read_maps_to_KEY_UNAVAILABLE_and_never_writes() = runTest {
         val firstScope = childScope()
@@ -422,6 +483,7 @@ class DataStoreStreakRepositoryTest {
             dataStore = createStreakDataStore(aead, scope, path, fileSystem),
             path = path,
             fileSystem = fileSystem,
+            aead = aead,
             today = today,
         )
 
@@ -478,6 +540,12 @@ class DataStoreStreakRepositoryTest {
     /** Fails every file write while [failWrites] is set, like a full disk. Reads still work. */
     private class FlakyFileSystem(delegate: FileSystem) : ForwardingFileSystem(delegate) {
         var failWrites = false
+        var failReads = false
+
+        override fun source(file: Path): Source {
+            if (failReads) throw IOException("Input/output error")
+            return super.source(file)
+        }
 
         override fun openReadWrite(file: Path, mustCreate: Boolean, mustExist: Boolean): FileHandle {
             if (failWrites) throw IOException("No space left on device")

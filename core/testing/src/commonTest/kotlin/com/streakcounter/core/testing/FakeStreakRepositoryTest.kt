@@ -95,4 +95,21 @@ class FakeStreakRepositoryTest {
         assertThat(repository.startFresh()).isEqualTo(Result.Success(Unit))
         assertThat(repository.current).isEqualTo(emptyList())
     }
+
+    @Test
+    fun resetUnreadableStorage_empties_on_key_unavailable_or_unreadable_and_never_on_readable_or_unknown() = runTest {
+        create("A")
+        val readable = repository.current
+        assertThat(repository.resetUnreadableStorage()).isEqualTo(Result.Success(Unit))
+        assertThat(repository.current).isEqualTo(readable)
+
+        repository.emitReadError(DataError.Local.UNKNOWN)
+        assertThat(repository.resetUnreadableStorage()).isEqualTo(Result.Error(DataError.Local.UNKNOWN))
+        assertThat(repository.current).isEqualTo(null)
+
+        repository.emitReadError(DataError.Local.KEY_UNAVAILABLE)
+        assertThat(repository.resetUnreadableStorage()).isEqualTo(Result.Success(Unit))
+        assertThat(repository.current).isEqualTo(emptyList())
+        assertThat(repository.resetStorageCalls).isEqualTo(3)
+    }
 }

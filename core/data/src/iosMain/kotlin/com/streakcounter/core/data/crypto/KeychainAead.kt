@@ -7,6 +7,7 @@ import dev.whyoleg.cryptography.providers.cryptokit.CryptoKit
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.usePinned
+import kotlin.concurrent.AtomicReference
 import platform.Security.SecRandomCopyBytes
 import platform.Security.errSecSuccess
 import platform.Security.kSecRandomDefault
@@ -24,8 +25,15 @@ class KeychainAead internal constructor(private val storage: KeyStorage) : Aead 
         account: String = DEFAULT_ACCOUNT,
     ) : this(KeychainKeyStorage(service, account))
 
-    // Thread-safe; a failed load throws and is retried on the next call.
-    private val cipher: IvAuthenticatedCipher by lazy {
+    // Loaded on first use and cached; a failed load throws and is retried on the next call.
+    // [deleteKey] drops the cache. Two threads racing the first load both end up with the stored
+    // key (see loadOrCreateKey), so a plain atomic cache is enough.
+    private val cached = AtomicReference<IvAuthenticatedCipher?>(null)
+
+    private val cipher: IvAuthenticatedCipher
+        get() = cached.value ?: loadCipher().also { cached.value = it }
+
+    private fun loadCipher(): IvAuthenticatedCipher =
         // Everything here is key access (Keychain read/add, key size, key import). None of it can
         // tell whether the file is fine, so it is reported as KeyUnavailableException, never as a
         // decrypt failure. Tag checks happen later, in decrypt, and stay ordinary failures.
@@ -39,6 +47,14 @@ class KeychainAead internal constructor(private val storage: KeyStorage) : Aead 
             } finally {
                 rawKey.fill(0)
             }
+        } catch (e: Exception) {
+            throw KeyUnavailableException(e)
+        }
+
+    override fun deleteKey() {
+        cached.value = null
+        try {
+            storage.delete()
         } catch (e: Exception) {
             throw KeyUnavailableException(e)
         }

@@ -112,6 +112,7 @@ class StreakListViewModel(
             }
             StreakListAction.OnUndo -> undo()
             StreakListAction.OnRetry -> retry()
+            StreakListAction.OnSaveFailedDismiss -> session.setFailed(null)
             is StreakListAction.OnCardClick -> openEdit(action.id)
             StreakListAction.OnNewClick -> openSheet(NEW_DRAFT)
             is StreakListAction.OnDraftChange -> changeDraft(action.draft)
@@ -238,9 +239,19 @@ class StreakListViewModel(
         }
     }
 
+    /**
+     * Only when the screen offers it. UNREADABLE deletes the file; a key that stayed unavailable
+     * (R15) also deletes the key (R16). Both erase every streak, so the UI confirms first (T6).
+     */
     private fun startFresh() {
+        val offered = state.value as? StreakListState.Unreadable ?: return
+        if (!offered.canStartFresh) return
         viewModelScope.launch {
-            if (repository.startFresh() is Result.Success) {
+            val result = when (offered.error) {
+                DataError.Local.KEY_UNAVAILABLE -> repository.resetUnreadableStorage()
+                else -> repository.startFresh()
+            }
+            if (result is Result.Success) {
                 keyRetries = 0
                 widgetUpdater.updateAll()
             }

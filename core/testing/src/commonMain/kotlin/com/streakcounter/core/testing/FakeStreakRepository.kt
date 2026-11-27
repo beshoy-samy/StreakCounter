@@ -44,6 +44,9 @@ class FakeStreakRepository(
     var startFreshCalls: Int = 0
         private set
 
+    var resetStorageCalls: Int = 0
+        private set
+
     /** The stored list, or null while [streaks] shows an error. */
     val current: List<Streak>? get() = (state.value as? Result.Success)?.data
 
@@ -75,6 +78,20 @@ class FakeStreakRepository(
         val value = state.value
         if (value is Result.Error) {
             if (value.error != DataError.Local.UNREADABLE) return Result.Error(value.error)
+            state.value = Result.Success(emptyList())
+        }
+        return Result.Success(Unit)
+    }
+
+    /** Real semantics: readable is left alone; KEY_UNAVAILABLE or UNREADABLE empties; other errors change nothing. */
+    override suspend fun resetUnreadableStorage(): EmptyResult<DataError.Local> {
+        resetStorageCalls++
+        shouldReturnError?.let { return Result.Error(it) }
+        val value = state.value
+        if (value is Result.Error) {
+            if (value.error != DataError.Local.UNREADABLE && value.error != DataError.Local.KEY_UNAVAILABLE) {
+                return Result.Error(value.error)
+            }
             state.value = Result.Success(emptyList())
         }
         return Result.Success(Unit)

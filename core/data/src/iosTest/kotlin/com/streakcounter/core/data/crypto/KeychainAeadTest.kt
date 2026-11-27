@@ -4,6 +4,7 @@ import assertk.assertFailure
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
+import assertk.assertions.isNull
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -52,5 +53,18 @@ class KeychainAeadTest {
         val sealed = aead.encrypt(plaintext, aad)
 
         assertFailure { aead.decrypt(sealed, "other.enc".encodeToByteArray()) }
+    }
+
+    @Test
+    fun deleteKey_removes_the_keychain_item_and_a_new_key_works() {
+        val aead = KeychainAead(service, account)
+        val sealed = aead.encrypt(plaintext, aad)
+
+        aead.deleteKey()
+
+        assertThat(KeychainKeyStorage(service, account).read()).isNull()
+        val fresh = aead.encrypt(plaintext, aad)
+        assertThat(KeychainAead(service, account).decrypt(fresh, aad).decodeToString()).isEqualTo("No smoking")
+        assertFailure { aead.decrypt(sealed, aad) }
     }
 }

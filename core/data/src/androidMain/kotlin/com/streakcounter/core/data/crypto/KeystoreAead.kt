@@ -38,6 +38,19 @@ class KeystoreAead(private val alias: String = DEFAULT_ALIAS) : Aead {
         return cipher.doFinal(ciphertext, Aead.NONCE_SIZE, ciphertext.size - Aead.NONCE_SIZE)
     }
 
+    override fun deleteKey(): Unit = synchronized(lock) {
+        try {
+            val keyStore = KeyStore.getInstance(KEYSTORE).apply { load(null) }
+            if (keyStore.containsAlias(alias)) keyStore.deleteEntry(alias)
+        } catch (e: GeneralSecurityException) {
+            throw KeyUnavailableException(e)
+        } catch (e: ProviderException) {
+            throw KeyUnavailableException(e)
+        } catch (e: IOException) {
+            throw KeyUnavailableException(e)
+        }
+    }
+
     /**
      * `Cipher.init` talks to the Keystore daemon; on some devices it fails after a reboot or an OS
      * update ("Keystore operation failed") with ProviderException or InvalidKeyException. That is

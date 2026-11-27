@@ -14,15 +14,27 @@ import kotlin.random.Random
  * Set [keyUnavailable] to make both operations throw [KeyUnavailableException], like a Keystore or
  * Keychain failure on a real device. Set [encryptFailure] to make only [encrypt] throw it (for
  * example an IllegalStateException from a broken provider).
+ *
+ * [deleteKey] counts calls in [deleteKeyCalls] and swaps in a new random key, so old ciphertext no
+ * longer decrypts; it also clears [keyUnavailable], like a broken Keystore entry replaced by a new one.
  */
 class FakeAead(
-    private val key: ByteArray = DEFAULT_KEY,
+    private var key: ByteArray = DEFAULT_KEY,
     private val random: Random = Random.Default,
 ) : Aead {
 
     var keyUnavailable: Boolean = false
 
     var encryptFailure: Exception? = null
+
+    var deleteKeyCalls: Int = 0
+        private set
+
+    override fun deleteKey() {
+        deleteKeyCalls++
+        key = random.nextBytes(key.size)
+        keyUnavailable = false
+    }
 
     override fun encrypt(plaintext: ByteArray, associatedData: ByteArray): ByteArray {
         if (keyUnavailable) throw KeyUnavailableException()

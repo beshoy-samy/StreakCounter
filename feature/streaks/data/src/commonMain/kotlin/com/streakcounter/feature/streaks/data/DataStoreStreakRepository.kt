@@ -2,6 +2,7 @@ package com.streakcounter.feature.streaks.data
 
 import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.DataStore
+import com.streakcounter.core.data.crypto.Aead
 import com.streakcounter.core.data.crypto.KeyUnavailableException
 import com.streakcounter.core.domain.DataError
 import com.streakcounter.core.domain.EmptyResult
@@ -35,6 +36,7 @@ class DataStoreStreakRepository(
     private val dataStore: DataStore<StreakFile>,
     private val path: Path,
     private val fileSystem: FileSystem,
+    private val aead: Aead,
     private val today: Today,
     private val newId: () -> Uuid = { Uuid.random() },
 ) : StreakRepository {
@@ -79,6 +81,30 @@ class DataStoreStreakRepository(
             return Result.Error(e.toReadError() ?: throw e)
         }
         return try {
+            fileSystem.delete(path, mustExist = false)
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            Result.Error(e.toWriteError() ?: throw e)
+        }
+    }
+
+    override suspend fun resetUnreadableStorage(): EmptyResult<DataError.Local> {
+        try {
+            dataStore.data.first()
+            // Readable: never delete the file or the key.
+            return Result.Success(Unit)
+        } catch (e: CorruptionException) {
+            // Unreadable: reset.
+        } catch (e: KeyUnavailableException) {
+            // The key stayed unreachable through the retries: reset.
+        } catch (e: Exception) {
+            return Result.Error(e.toReadError() ?: throw e)
+        }
+        return try {
+            // Key first: if the file delete then fails, the file is sealed with a key that is gone,
+            // reads as UNREADABLE, and "Start fresh" can still remove it. The other order could
+            // leave an empty file next to a broken key, which reads fine and never offers a reset.
+            aead.deleteKey()
             fileSystem.delete(path, mustExist = false)
             Result.Success(Unit)
         } catch (e: Exception) {

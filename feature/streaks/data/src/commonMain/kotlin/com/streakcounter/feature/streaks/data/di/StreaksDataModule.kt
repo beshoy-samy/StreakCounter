@@ -39,6 +39,7 @@ val streaksDataModule = module {
             dataStore = get(),
             path = get<StreakFileLocation>().path,
             fileSystem = systemFileSystem(),
+            aead = get(),
             today = get(),
         )
     }

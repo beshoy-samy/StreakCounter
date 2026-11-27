@@ -200,6 +200,43 @@ class StreakListViewModelTest {
         assertThat(h.ready.cards).isEmpty()
     }
 
+    @Test
+    fun start_fresh_on_a_key_that_stays_unavailable_resets_storage() = transformTest {
+        val h = harness(readError = DataError.Local.KEY_UNAVAILABLE)
+        settle()
+        repeat(3) { h.act(this, StreakListAction.OnRetryOpen) }
+        assertThat(h.state).isEqualTo(StreakListState.Unreadable(DataError.Local.KEY_UNAVAILABLE, canStartFresh = true))
+
+        h.act(this, StreakListAction.OnStartFreshConfirm)
+
+        assertThat(h.repo.resetStorageCalls).isEqualTo(1)
+        assertThat(h.repo.startFreshCalls).isEqualTo(0)
+        assertThat(h.ready.cards).isEmpty()
+    }
+
+    @Test
+    fun unreadable_start_fresh_uses_startFresh_not_the_key_reset() = transformTest {
+        val h = harness(readError = DataError.Local.UNREADABLE)
+        settle()
+
+        h.act(this, StreakListAction.OnStartFreshConfirm)
+
+        assertThat(h.repo.startFreshCalls).isEqualTo(1)
+        assertThat(h.repo.resetStorageCalls).isEqualTo(0)
+    }
+
+    @Test
+    fun start_fresh_does_nothing_when_it_is_not_offered() = transformTest {
+        val h = harness(readError = DataError.Local.KEY_UNAVAILABLE)
+        settle()
+
+        h.act(this, StreakListAction.OnStartFreshConfirm)
+
+        assertThat(h.repo.startFreshCalls).isEqualTo(0)
+        assertThat(h.repo.resetStorageCalls).isEqualTo(0)
+        assertThat(h.state).isEqualTo(StreakListState.Unreadable(DataError.Local.KEY_UNAVAILABLE, canStartFresh = false))
+    }
+
     // ---- Undo ----
 
     @Test
@@ -288,6 +325,23 @@ class StreakListViewModelTest {
         assertThat(h.repo.executed).containsExactly(StreakCommand.Increment(idA), StreakCommand.Increment(idA))
         assertThat(h.card(idA).value).isEqualTo(6)
         assertThat(h.ready.saveFailed).isFalse()
+    }
+
+    @Test
+    fun save_failed_dismiss_clears_the_snackbar_without_replaying() = transformTest {
+        val h = harness(listOf(times()))
+        settle()
+        h.repo.shouldReturnError = DataError.Local.WRITE_FAILED
+        h.act(this, StreakListAction.OnIncrement(idA))
+        assertThat(h.ready.saveFailed).isTrue()
+
+        h.act(this, StreakListAction.OnSaveFailedDismiss)
+
+        assertThat(h.ready.saveFailed).isFalse()
+        assertThat(h.session.failedCommand.value).isNull()
+        h.repo.shouldReturnError = null
+        h.act(this, StreakListAction.OnRetry)
+        assertThat(h.repo.executed).containsExactly(StreakCommand.Increment(idA))
     }
 
     @Test

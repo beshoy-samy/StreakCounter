@@ -6,6 +6,7 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotEqualTo
+import assertk.assertions.isNull
 import kotlin.test.Test
 
 /** AES-GCM and key handling of [KeychainAead] behind the [KeyStorage] seam, without the Keychain. */
@@ -116,8 +117,36 @@ class KeyStorageAeadTest {
         assertThat(aead.decrypt(aead.encrypt(plaintext, aad), aad).decodeToString()).isEqualTo("No smoking")
     }
 
+    @Test
+    fun deleteKey_removes_the_key_and_the_next_encrypt_makes_a_new_one() {
+        val storage = InMemoryKeyStorage()
+        val aead = KeychainAead(storage)
+        val sealed = aead.encrypt(plaintext, aad)
+        val oldKey = storage.read()
+
+        aead.deleteKey()
+
+        assertThat(storage.read()).isNull()
+        val fresh = aead.encrypt(plaintext, aad)
+        assertThat(storage.adds).isEqualTo(2)
+        assertThat(storage.read()?.toList()).isNotEqualTo(oldKey?.toList())
+        assertThat(aead.decrypt(fresh, aad).decodeToString()).isEqualTo("No smoking")
+        assertFailure { aead.decrypt(sealed, aad) }
+    }
+
+    @Test
+    fun deleteKey_failure_throws_KeyUnavailable() {
+        val storage = FailingKeyStorage(failRead = false, failAdd = false, failDelete = true)
+
+        assertFailure { KeychainAead(storage).deleteKey() }.isInstanceOf<KeyUnavailableException>()
+    }
+
     /** Keychain errors such as errSecInteractionNotAllowed (device locked since boot). */
-    private class FailingKeyStorage(var failRead: Boolean, var failAdd: Boolean = true) : KeyStorage {
+    private class FailingKeyStorage(
+        var failRead: Boolean,
+        var failAdd: Boolean = true,
+        var failDelete: Boolean = false,
+    ) : KeyStorage {
         private var key: ByteArray? = null
         var adds = 0
             private set
@@ -132,6 +161,11 @@ class KeyStorageAeadTest {
             if (failAdd) throw KeychainException("SecItemAdd", -25308)
             this.key = key.copyOf()
             return true
+        }
+
+        override fun delete() {
+            if (failDelete) throw KeychainException("SecItemDelete", -25308)
+            key = null
         }
     }
 
@@ -153,6 +187,10 @@ class KeyStorageAeadTest {
             if (this.key != null) return false
             this.key = key.copyOf()
             return true
+        }
+
+        override fun delete() {
+            key = null
         }
     }
 }

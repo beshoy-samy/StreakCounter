@@ -77,8 +77,7 @@ internal class KeychainKeyStorage(
         }
     }
 
-    /** Test cleanup only. */
-    fun delete() = memScoped {
+    override fun delete(): Unit = memScoped {
         when (val status = SecItemDelete(query())) {
             errSecSuccess, errSecItemNotFound -> Unit
             else -> throw KeychainException("SecItemDelete", status)

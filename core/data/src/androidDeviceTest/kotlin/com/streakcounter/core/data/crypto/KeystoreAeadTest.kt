@@ -87,5 +87,25 @@ class KeystoreAeadTest {
         assertThat(key.encoded == null).isTrue()
     }
 
+    @Test
+    fun deleteKey_removes_the_entry_and_a_new_key_works() {
+        val aead = KeystoreAead(alias)
+        val sealed = aead.encrypt(plaintext, aad)
+
+        aead.deleteKey()
+
+        assertThat(keyStore().containsAlias(alias)).isFalse()
+        val fresh = aead.encrypt(plaintext, aad)
+        assertThat(aead.decrypt(fresh, aad).decodeToString()).isEqualTo("No smoking")
+        assertFailure { aead.decrypt(sealed, aad) }
+    }
+
+    @Test
+    fun deleteKey_without_a_key_is_a_noop() {
+        KeystoreAead(alias).deleteKey()
+
+        assertThat(keyStore().containsAlias(alias)).isFalse()
+    }
+
     private fun keyStore(): KeyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
 }
