@@ -109,10 +109,11 @@
     <!-- Can't open (T5) and Start fresh (T6) -->
     <string name="unreadable_title">تعذّر فتح سلاسلك</string>
     <string name="unreadable_body">لا يمكن قراءة الملف المحفوظ على هذا الهاتف. يحدث هذا عند استعادة نسخة احتياطية على هاتف جديد، لأن المفتاح يبقى على الهاتف القديم.</string>
+    <string name="unreadable_body_locked">سلاسلك لا تزال على هذا الهاتف، لكن لا يمكن فتحها الآن. أعد تشغيل هاتفك، ثم حاول مرة أخرى.</string>
     <string name="start_fresh">ابدأ من جديد</string>
     <string name="start_fresh_title">البدء من جديد؟</string>
     <string name="start_fresh_body">سيؤدي هذا إلى حذف الملف المحفوظ الذي لا يمكن فتحه. ستضيع كل السلاسل التي فيه ولا يمكن استرجاعها.</string>
-    <string name="start_fresh_body_key">لا يمكن استخدام المفتاح الذي يحمي سلاسلك على هذا الهاتف. البدء من جديد يحذفها ولا يمكن استرجاعها.</string>
+    <string name="start_fresh_body_key">أعد تشغيل هاتفك أولًا. لا يمكن استخدام المفتاح الذي يحمي سلاسلك على هذا الهاتف. البدء من جديد يحذفها ولا يمكن استرجاعها.</string>
     <string name="keep_file">أبقِ الملف</string>
     <string name="delete_and_start_fresh">احذف وابدأ من جديد</string>
 

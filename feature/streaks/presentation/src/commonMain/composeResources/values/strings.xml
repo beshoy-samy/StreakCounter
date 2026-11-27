@@ -93,10 +93,11 @@
     <!-- Can't open (T5) and Start fresh (T6) -->
     <string name="unreadable_title">Couldn’t open your streaks</string>
     <string name="unreadable_body">The saved file can’t be read on this phone. This happens after restoring a backup onto a new phone, because the key stays on the old one.</string>
+    <string name="unreadable_body_locked">Your streaks are still on this phone but can’t be unlocked right now. Restart your phone, then try again.</string>
     <string name="start_fresh">Start fresh</string>
     <string name="start_fresh_title">Start fresh?</string>
     <string name="start_fresh_body">This deletes the saved file that can’t be opened. Every streak in it is lost and you can’t get them back.</string>
-    <string name="start_fresh_body_key">The key that protects your streaks on this phone can’t be used. Starting fresh deletes them, and they can’t be recovered.</string>
+    <string name="start_fresh_body_key">Restart your phone first. The key that protects your streaks on this phone can’t be used. Starting fresh deletes them, and they can’t be recovered.</string>
     <string name="keep_file">Keep file</string>
     <string name="delete_and_start_fresh">Delete and start fresh</string>
 

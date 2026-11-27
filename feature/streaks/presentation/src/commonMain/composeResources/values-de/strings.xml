@@ -93,10 +93,11 @@
     <!-- Can't open (T5) and Start fresh (T6) -->
     <string name="unreadable_title">Deine Serien konnten nicht geöffnet werden</string>
     <string name="unreadable_body">Die gespeicherte Datei kann auf diesem Handy nicht gelesen werden. Das passiert, wenn ein Backup auf ein neues Handy übertragen wird, weil der Schlüssel auf dem alten bleibt.</string>
+    <string name="unreadable_body_locked">Deine Serien sind noch auf diesem Handy, können aber gerade nicht entsperrt werden. Starte dein Handy neu und versuch es dann noch einmal.</string>
     <string name="start_fresh">Neu anfangen</string>
     <string name="start_fresh_title">Neu anfangen?</string>
     <string name="start_fresh_body">Dadurch wird die gespeicherte Datei gelöscht, die nicht geöffnet werden kann. Alle Serien darin gehen verloren und lassen sich nicht wiederherstellen.</string>
-    <string name="start_fresh_body_key">Der Schlüssel, der deine Serien auf diesem Handy schützt, kann nicht verwendet werden. Wenn du neu anfängst, werden sie gelöscht und lassen sich nicht wiederherstellen.</string>
+    <string name="start_fresh_body_key">Starte zuerst dein Handy neu. Der Schlüssel, der deine Serien auf diesem Handy schützt, kann nicht verwendet werden. Wenn du neu anfängst, werden sie gelöscht und lassen sich nicht wiederherstellen.</string>
     <string name="keep_file">Datei behalten</string>
     <string name="delete_and_start_fresh">Löschen und neu anfangen</string>
 

@@ -36,6 +36,7 @@ import streakcounter.feature.streaks.presentation.generated.resources.start_fres
 import streakcounter.feature.streaks.presentation.generated.resources.start_fresh_title
 import streakcounter.feature.streaks.presentation.generated.resources.try_again
 import streakcounter.feature.streaks.presentation.generated.resources.unreadable_body
+import streakcounter.feature.streaks.presentation.generated.resources.unreadable_body_locked
 import streakcounter.feature.streaks.presentation.generated.resources.unreadable_title
 import streakcounter.core.designsystem.generated.resources.Res as DsRes
 
@@ -65,7 +66,11 @@ internal fun UnreadableState(
             textAlign = TextAlign.Center,
         )
         Text(
-            text = stringResource(Res.string.unreadable_body),
+            // Only UNREADABLE means the file is gone for good; a missing key or an unknown error
+            // leaves the streaks on the phone, so that copy must not nudge towards deleting them.
+            text = stringResource(
+                if (error == DataError.Local.UNREADABLE) Res.string.unreadable_body else Res.string.unreadable_body_locked,
+            ),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,

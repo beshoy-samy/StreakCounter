@@ -319,6 +319,28 @@ class StreakListScreenUiTest : UiTestBase() {
     }
 
     @Test
+    fun unreadable_body_says_the_file_cannot_be_read_here() = runComposeUiTest {
+        setContent { Screen(StreakListState.Unreadable(DataError.Local.UNREADABLE, canStartFresh = true), mutableListOf()) }
+
+        onNodeWithText(UNREADABLE_BODY).assertExists()
+        onNodeWithText(LOCKED_BODY).assertDoesNotExist()
+    }
+
+    @Test
+    fun key_unavailable_and_unknown_bodies_say_the_streaks_are_still_here() = runComposeUiTest {
+        var error by mutableStateOf(DataError.Local.KEY_UNAVAILABLE)
+        setContent { Screen(StreakListState.Unreadable(error, canStartFresh = false), mutableListOf()) }
+
+        onNodeWithText(LOCKED_BODY).assertExists()
+        onNodeWithText(UNREADABLE_BODY).assertDoesNotExist()
+
+        error = DataError.Local.UNKNOWN
+        waitForIdle()
+        onNodeWithText(LOCKED_BODY).assertExists()
+        onNodeWithText(UNREADABLE_BODY).assertDoesNotExist()
+    }
+
+    @Test
     fun key_unavailable_start_fresh_says_streaks_cannot_be_recovered() = runComposeUiTest {
         val actions = mutableListOf<StreakListAction>()
         setContent { Screen(StreakListState.Unreadable(DataError.Local.KEY_UNAVAILABLE, canStartFresh = true), actions) }
@@ -326,7 +348,7 @@ class StreakListScreenUiTest : UiTestBase() {
         onNodeWithText("Start fresh").performClick()
 
         onNodeWithText(
-            "The key that protects your streaks on this phone can’t be used. " +
+            "Restart your phone first. The key that protects your streaks on this phone can’t be used. " +
                 "Starting fresh deletes them, and they can’t be recovered.",
         ).assertExists()
         onNodeWithText("Keep file").performClick()
@@ -728,3 +750,8 @@ private fun nameHasVisualOverflow(provider: SemanticsNodeInteractionsProvider, i
     node.config[SemanticsActions.GetTextLayoutResult].action?.invoke(results)
     return results.single().hasVisualOverflow
 }
+
+private const val UNREADABLE_BODY = "The saved file can’t be read on this phone. This happens after restoring a backup " +
+    "onto a new phone, because the key stays on the old one."
+private const val LOCKED_BODY = "Your streaks are still on this phone but can’t be unlocked right now. " +
+    "Restart your phone, then try again."
