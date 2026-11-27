@@ -64,14 +64,8 @@ internal fun StreakCardUi.subtitle(today: LocalDate?): String {
         )
         type == StreakType.CHECK_IN ->
             stringResource(if (doneToday) Res.string.detail_done_today else Res.string.detail_not_yet_today)
-        type == StreakType.DAYS_SINCE && startDate != null -> {
-            val skeleton = if (today == null || startDate.year == today.year) {
-                DateSkeleton.DAY_MONTH
-            } else {
-                DateSkeleton.DAY_MONTH_YEAR
-            }
-            stringResource(Res.string.detail_since, formatDate(startDate, skeleton))
-        }
+        type == StreakType.DAYS_SINCE && startDate != null ->
+            stringResource(Res.string.detail_since, shortDate(startDate, today))
         type == StreakType.TIMES && autoReset -> stringResource(Res.string.detail_resets_at_midnight)
         type == StreakType.TIMES -> stringResource(Res.string.detail_running_total)
         else -> null
@@ -89,9 +83,15 @@ internal fun StreakCardUi.unit(): String = when {
 
 /** "Ended 25 Nov after 12 days. A new streak starts with your next check-in." */
 @Composable
-internal fun EndedNote.text(): String = pluralStringResource(
+internal fun EndedNote.text(today: LocalDate?): String = pluralStringResource(
     Res.plurals.ended_note,
     previousCount,
-    formatDate(endedOn, DateSkeleton.DAY_MONTH),
+    shortDate(endedOn, today),
     formatNumber(previousCount),
+)
+
+/** "11 Oct" in the current year, "3 Jul 2023" otherwise (or when today is unknown, without year). */
+internal fun shortDate(date: LocalDate, today: LocalDate?): String = formatDate(
+    date,
+    if (today == null || date.year == today.year) DateSkeleton.DAY_MONTH else DateSkeleton.DAY_MONTH_YEAR,
 )

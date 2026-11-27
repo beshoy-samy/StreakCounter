@@ -3,6 +3,7 @@ package com.streakcounter.feature.streaks.presentation.list.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -16,11 +17,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.onLongClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -28,6 +29,7 @@ import com.streakcounter.core.designsystem.components.MinusButton
 import com.streakcounter.core.designsystem.components.PlusButton
 import com.streakcounter.core.designsystem.components.PlusKind
 import com.streakcounter.core.designsystem.components.StreakCardFrame
+import com.streakcounter.core.designsystem.theme.ControlSize
 import com.streakcounter.core.designsystem.theme.Spacing
 import com.streakcounter.feature.streaks.domain.StreakType
 import com.streakcounter.feature.streaks.presentation.format.formatNumber
@@ -68,7 +70,13 @@ internal fun nameTag(id: Uuid) = "streak_name_$id"
 /**
  * One streak: name (wraps fully, never truncated), subtitle, reset, the big number with its unit,
  * minus and the type's plus button, and the one-time ended note. The whole card opens the edit
- * sheet; long-press starts reorder mode. Every button is also a custom accessibility action.
+ * sheet; long-press lifts it into reorder mode (handled by the list item, see [reorderItem];
+ * TalkBack gets it as the card's long-click action). Every button is also a custom accessibility
+ * action.
+ *
+ * Padding is 20 dp except top 8 / end 12, so the reset button keeps a real 48 dp target in the
+ * corner (design: its icon sits 12 dp above and 8 dp past the 20 dp padding); the rows add the
+ * difference back.
  */
 @Composable
 internal fun StreakCard(
@@ -82,16 +90,22 @@ internal fun StreakCard(
     val name = streakDisplayName(card.name, card.type)
     val plus = plusSpec(card, name)
     val actions = cardActions(card, index, count, onAction)
+    val reorderLabel = stringResource(Res.string.action_reorder)
     StreakCardFrame(
         progress = card.progress,
         onClick = { onAction(StreakListAction.OnCardClick(card.id)) },
         onClickLabel = stringResource(Res.string.card_edit, name),
-        onLongClick = { onAction(StreakListAction.OnReorderStart) },
-        onLongClickLabel = stringResource(Res.string.action_reorder),
-        modifier = modifier.semantics { customActions = actions },
+        modifier = modifier.semantics {
+            customActions = actions
+            onLongClick(reorderLabel) {
+                onAction(StreakListAction.OnReorderStart)
+                true
+            }
+        },
+        contentPadding = PaddingValues(start = Spacing.s5, top = Spacing.s2, end = Spacing.s3, bottom = Spacing.s5),
     ) {
         Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(Spacing.s2)) {
-            Column(Modifier.weight(1f)) {
+            Column(Modifier.weight(1f).padding(top = Spacing.s3)) {
                 Text(
                     text = name,
                     style = MaterialTheme.typography.titleMedium,
@@ -112,8 +126,7 @@ internal fun StreakCard(
             }
             IconButton(
                 onClick = { onAction(StreakListAction.OnReset(card.id)) },
-                // Design: the 48 dp target pulls 12 dp up and 8 dp toward the end, into the padding.
-                modifier = Modifier.pullIntoPadding(top = 12, end = 8),
+                modifier = Modifier.size(ControlSize.touch),
             ) {
                 Icon(
                     imageVector = vectorResource(DsRes.drawable.ic_restart_alt),
@@ -123,7 +136,7 @@ internal fun StreakCard(
             }
         }
         Row(
-            modifier = Modifier.padding(top = Spacing.s2),
+            modifier = Modifier.padding(top = Spacing.s2, end = Spacing.s2),
             verticalAlignment = Alignment.Bottom,
             horizontalArrangement = Arrangement.spacedBy(Spacing.s3),
         ) {
@@ -173,7 +186,7 @@ internal fun StreakCard(
         card.endedNote?.let { note ->
             Row(
                 modifier = Modifier
-                    .padding(top = Spacing.s3)
+                    .padding(top = Spacing.s3, end = Spacing.s2)
                     .clip(MaterialTheme.shapes.medium)
                     .background(MaterialTheme.colorScheme.surface)
                     .padding(horizontal = Spacing.s3, vertical = Spacing.s2),
@@ -184,7 +197,7 @@ internal fun StreakCard(
                     contentDescription = null,
                     modifier = Modifier.size(20.dp),
                 )
-                Text(note.text(), style = MaterialTheme.typography.bodyMedium)
+                Text(note.text(today), style = MaterialTheme.typography.bodyMedium)
             }
         }
     }
@@ -241,12 +254,6 @@ private fun cardActions(
     val moveDown = stringResource(Res.string.action_move_down)
     fun action(label: String, block: () -> Unit) = CustomAccessibilityAction(label) { block(); true }
     fun send(action: StreakListAction) = { onAction(action) }
-    fun move(to: Int) = {
-        // Outside reorder mode a single move is saved straight away.
-        onAction(StreakListAction.OnReorderStart)
-        onAction(StreakListAction.OnMove(index, to))
-        onAction(StreakListAction.OnReorderDone)
-    }
     return buildList {
         val checkedIn = card.type == StreakType.CHECK_IN && card.doneToday
         if (checkedIn) {
@@ -262,20 +269,7 @@ private fun cardActions(
         }
         add(action(reset, send(StreakListAction.OnReset(card.id))))
         add(action(delete, send(StreakListAction.OnDelete(card.id))))
-        if (index > 0) add(action(moveUp, move(index - 1)))
-        if (index < count - 1) add(action(moveDown, move(index + 1)))
-    }
-}
-
-/**
- * Like CSS negative margins: reports a size [top] dp shorter and [end] dp narrower and draws the
- * content shifted up and toward the end, so a 48 dp target doesn't push the card's rows apart.
- */
-private fun Modifier.pullIntoPadding(top: Int, end: Int): Modifier = layout { measurable, constraints ->
-    val placeable = measurable.measure(constraints)
-    val topPx = top.dp.roundToPx()
-    val endPx = end.dp.roundToPx()
-    layout(placeable.width - endPx, placeable.height - topPx) {
-        placeable.placeRelative(0, -topPx)
+        if (index > 0) add(action(moveUp, send(StreakListAction.OnMoveOne(card.id, -1))))
+        if (index < count - 1) add(action(moveDown, send(StreakListAction.OnMoveOne(card.id, 1))))
     }
 }

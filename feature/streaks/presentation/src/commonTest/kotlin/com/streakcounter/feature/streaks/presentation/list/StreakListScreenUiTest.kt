@@ -1,6 +1,28 @@
 package com.streakcounter.feature.streaks.presentation.list
 
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertWidthIsAtLeast
+import androidx.compose.ui.test.click
+import androidx.compose.ui.test.hasAnyDescendant
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.swipeRight
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
+import com.streakcounter.feature.streaks.domain.EndedNote
+import com.streakcounter.feature.streaks.presentation.list.components.LiftedKey
+import com.streakcounter.feature.streaks.presentation.list.components.handleTag
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.SemanticsActions
@@ -62,6 +84,7 @@ class StreakListScreenUiTest : UiTestBase() {
     private fun ready(
         cards: List<StreakCardUi> = listOf(card()),
         undo: UndoUi? = null,
+        summary: ListSummary = ListSummary.None,
     ) = StreakListState.Ready(
         cards = cards,
         checkInsLeft = cards.count { it.type == StreakType.CHECK_IN && !it.doneToday },
@@ -73,6 +96,8 @@ class StreakListScreenUiTest : UiTestBase() {
         reorderMode = false,
         dailyGoalHit = null,
         savingStuck = false,
+        summary = summary,
+        failedWrites = 0,
     )
 
     @Composable
@@ -189,7 +214,7 @@ class StreakListScreenUiTest : UiTestBase() {
         setContent { Screen(ready(cards = listOf(card(name = longName))), mutableListOf()) }
 
         val text = onNode(hasText(longName, substring = false) and hasClickAction()).fetchSemanticsNode()
-            .config[androidx.compose.ui.semantics.SemanticsProperties.Text]
+            .config[SemanticsProperties.Text]
             .joinToString { it.text }
         assertTrue(longName in text, "full 300-char name is in the card semantics")
         // Every line drawn: the name's own text layout reports no visual overflow.
@@ -237,7 +262,7 @@ class StreakListScreenUiTest : UiTestBase() {
             card(value = 12, goal = 30),
             card(id = water, name = null, type = StreakType.TIMES, value = 31, goal = 30),
         )
-        setContent { Screen(ready(cards = cards), mutableListOf()) }
+        setContent { Screen(ready(cards = cards, summary = ListSummary.CheckInsLeft(1)), mutableListOf()) }
 
         onNodeWithText("Check-in · 12 of 30, 18 to go").assertExists()
         onNodeWithText("Times · goal 30 reached").assertExists()
@@ -248,8 +273,37 @@ class StreakListScreenUiTest : UiTestBase() {
 
     @Test
     fun all_done_summary() = runComposeUiTest {
-        setContent { Screen(ready(cards = listOf(card(doneToday = true))), mutableListOf()) }
+        setContent {
+            Screen(ready(cards = listOf(card(doneToday = true)), summary = ListSummary.AllCheckedIn), mutableListOf())
+        }
         onNodeWithText("All checked in today. Nice and steady.").assertExists()
+    }
+
+    @Test
+    fun day_and_welcome_back_summaries() = runComposeUiTest {
+        var state by mutableStateOf(ready(summary = ListSummary.Day(4)))
+        setContent { Screen(state, mutableListOf()) }
+        onNodeWithText("Day 4. Keep it going.").assertExists()
+
+        state = ready(summary = ListSummary.WelcomeBack)
+        onNodeWithText("Welcome back. Pick up where it feels right.").assertExists()
+
+        state = ready(summary = ListSummary.CheckInsLeft(3))
+        onNodeWithText("3 check-ins left today. You’ve got this.").assertExists()
+    }
+
+    @Test
+    fun ended_note_shows_the_year_only_when_it_is_not_this_year() = runComposeUiTest {
+        var state by mutableStateOf(ready(cards = listOf(card(value = 0).copy(endedNote = EndedNote(LocalDate(2026, 11, 25), 12)))))
+        setContent { Screen(state, mutableListOf()) }
+        val thisYear = onNode(hasText("12 days", substring = true), useUnmergedTree = true).fetchSemanticsNode()
+            .config[SemanticsProperties.Text].single().text
+        assertTrue("2026" !in thisYear, thisYear)
+
+        state = ready(cards = listOf(card(value = 0).copy(endedNote = EndedNote(LocalDate(2025, 12, 30), 12))))
+        val lastYear = onNode(hasText("12 days", substring = true), useUnmergedTree = true).fetchSemanticsNode()
+            .config[SemanticsProperties.Text].single().text
+        assertTrue("2025" in lastYear, lastYear)
     }
 
     @Test
@@ -264,6 +318,101 @@ class StreakListScreenUiTest : UiTestBase() {
 
         runOnUiThread { custom.first { it.label == "Delete" }.action() }
         assertEquals(StreakListAction.OnDelete(gymId), actions.last())
+
+        // Outside reorder mode a move is one action, saved at once.
+        runOnUiThread { custom.first { it.label == "Move down" }.action() }
+        assertEquals(StreakListAction.OnMoveOne(gymId, 1), actions.last())
+        val readUp = onNode(hasText("Read") and hasClickAction()).fetchSemanticsNode()
+            .config[SemanticsActions.CustomActions].first { it.label == "Move up" }
+        runOnUiThread { readUp.action() }
+        assertEquals(StreakListAction.OnMoveOne(second, -1), actions.last())
+        // Long-press for TalkBack starts reorder mode.
+        onNode(hasText("Gym") and hasClickAction()).performSemanticsAction(SemanticsActions.OnLongClick)
+        assertEquals(StreakListAction.OnReorderStart, actions.last())
+    }
+
+    @Test
+    fun reorder_rows_move_up_and_down_for_talkback() = runComposeUiTest {
+        val actions = mutableListOf<StreakListAction>()
+        val second = Uuid.parse("00000000-0000-0000-0000-000000000003")
+        setContent {
+            Screen(ready(cards = listOf(card(), card(id = second, name = "Read"))).copy(reorderMode = true), actions)
+        }
+
+        val gym = onNode(hasText("Gym") and SemanticsMatcher.keyIsDefined(SemanticsActions.CustomActions))
+            .fetchSemanticsNode().config[SemanticsActions.CustomActions]
+        assertEquals(listOf("Move down"), gym.map { it.label })
+        runOnUiThread { gym.single().action() }
+        assertEquals(StreakListAction.OnMove(0, 1), actions.last())
+
+        waitForIdle()
+        // The local order already moved, so "Read" is now first and Gym can go back up.
+        val gymNow = onNode(hasText("Gym") and SemanticsMatcher.keyIsDefined(SemanticsActions.CustomActions))
+            .fetchSemanticsNode().config[SemanticsActions.CustomActions]
+        assertEquals(listOf("Move up"), gymNow.map { it.label })
+        runOnUiThread { gymNow.single().action() }
+        assertEquals(StreakListAction.OnMove(1, 0), actions.last())
+    }
+
+    @Test
+    fun reorder_handle_is_a_48dp_target() = runComposeUiTest {
+        setContent { Screen(ready().copy(reorderMode = true), mutableListOf()) }
+        onNodeWithTag(handleTag(gymId), useUnmergedTree = true)
+            .assertWidthIsAtLeast(48.dp)
+            .assertHeightIsAtLeast(48.dp)
+    }
+
+    @Test
+    fun handle_drag_moves_the_row() = runComposeUiTest {
+        val actions = mutableListOf<StreakListAction>()
+        val second = Uuid.parse("00000000-0000-0000-0000-000000000003")
+        setContent {
+            Screen(ready(cards = listOf(card(), card(id = second, name = "Read"))).copy(reorderMode = true), actions)
+        }
+
+        onNodeWithTag(handleTag(gymId), useUnmergedTree = true).performTouchInput {
+            down(center)
+            repeat(20) { moveBy(Offset(0f, 12.dp.toPx())) }
+            up()
+        }
+        waitForIdle()
+
+        assertEquals(listOf<StreakListAction>(StreakListAction.OnMove(0, 1)), actions)
+    }
+
+    @Test
+    fun long_press_lifts_the_pressed_card_into_reorder_mode() = runComposeUiTest {
+        val actions = mutableListOf<StreakListAction>()
+        val second = Uuid.parse("00000000-0000-0000-0000-000000000003")
+        var state by mutableStateOf(ready(cards = listOf(card(), card(id = second, name = "Read"))))
+        setContent {
+            StreakTheme(darkTheme = false) {
+                StreakListScreen(
+                    state = state,
+                    onAction = {
+                        actions += it
+                        if (it == StreakListAction.OnReorderStart) state = state.copy(reorderMode = true)
+                    },
+                    today = today,
+                )
+            }
+        }
+
+        onNode(hasText("Read") and hasClickAction()).performTouchInput {
+            down(center)
+            advanceEventTime(1_000)
+            moveBy(Offset(0f, 2f))
+        }
+        waitForIdle()
+
+        assertEquals(StreakListAction.OnReorderStart, actions.first())
+        onNodeWithText("Drag to reorder").assertExists()
+        onNode(SemanticsMatcher.expectValue(LiftedKey, true) and hasAnyDescendant(hasText("Read"))).assertExists()
+        onNode(SemanticsMatcher.expectValue(LiftedKey, false) and hasAnyDescendant(hasText("Gym"))).assertExists()
+        onRoot().performTouchInput { up() }
+        waitForIdle()
+        onNode(SemanticsMatcher.expectValue(LiftedKey, true)).assertDoesNotExist()
+        assertTrue(actions.none { it is StreakListAction.OnCardClick }, "a lift is not a tap: $actions")
     }
 
     @Test
@@ -315,19 +464,115 @@ class StreakListScreenUiTest : UiTestBase() {
     }
 
     @Test
+    fun rtl_swipe_toward_start_is_to_the_right() = runComposeUiTest {
+        val actions = mutableListOf<StreakListAction>()
+        setContent {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) { Screen(ready(), actions) }
+        }
+
+        onNode(hasText("Gym") and hasClickAction()).performTouchInput { swipeLeft(startX = right - 1f, endX = left) }
+        waitForIdle()
+        assertTrue(actions.isEmpty(), "toward the end edge does nothing in RTL: $actions")
+
+        onNode(hasText("Gym") and hasClickAction()).performTouchInput { swipeRight(startX = left + 1f, endX = right) }
+        waitForIdle()
+        assertEquals(listOf<StreakListAction>(StreakListAction.OnDelete(gymId)), actions)
+    }
+
+    @Test
+    fun fast_short_fling_springs_back() = runComposeUiTest {
+        val actions = mutableListOf<StreakListAction>()
+        setContent { Screen(ready(), actions) }
+        val card = onNode(hasText("Gym") and hasClickAction())
+        val restLeft = card.fetchSemanticsNode().boundsInRoot.left
+
+        // 30 % in 40 ms: a hard fling, but short of 40 %.
+        card.performTouchInput { swipeLeft(startX = right - 1f, endX = right - width * 0.3f, durationMillis = 40) }
+        waitForIdle()
+
+        assertTrue(actions.isEmpty(), "a fling under 40 % does not delete: $actions")
+        assertEquals(restLeft, card.fetchSemanticsNode().boundsInRoot.left)
+    }
+
+    @Test
     fun short_swipe_springs_back() = runComposeUiTest {
         val actions = mutableListOf<StreakListAction>()
         setContent { Screen(ready(), actions) }
 
-        // Slow, so Material's fling-velocity dismiss stays out of it: only the 40 % rule decides.
-        onNode(hasText("Gym") and hasClickAction()).performTouchInput {
-            swipeLeft(startX = right - 1f, endX = right - width * 0.2f, durationMillis = 3_000)
+        val card = onNode(hasText("Gym") and hasClickAction())
+        val restLeft = card.fetchSemanticsNode().boundsInRoot.left
+
+        card.performTouchInput {
+            down(Offset(right - 1f, centerY))
+            repeat(10) { moveBy(Offset(-width * 0.02f, 0f), delayMillis = 30) }
         }
+        // It really is being swiped (not taken as a long-press).
+        assertTrue(card.fetchSemanticsNode().boundsInRoot.left < restLeft - 10f, "card follows the finger")
+        card.performTouchInput { up() }
         waitForIdle()
 
-        // (Robolectric's synthetic slow swipe can also count as a long-press, which only starts
-        // reorder mode; a real device doesn't, checked on the emulator.)
-        assertTrue(actions.none { it is StreakListAction.OnDelete }, "a swipe under 40 % does not delete: $actions")
+        assertTrue(actions.isEmpty(), "a swipe under 40 % does nothing: $actions")
+        assertEquals(restLeft, card.fetchSemanticsNode().boundsInRoot.left)
+    }
+
+    @Test
+    fun swiped_card_waits_for_the_delete_and_comes_back_when_it_fails() = runComposeUiTest {
+        val actions = mutableListOf<StreakListAction>()
+        var state by mutableStateOf(ready())
+        setContent { StreakTheme(darkTheme = false) { StreakListScreen(state, { actions += it }, today) } }
+        val card = onNode(hasText("Gym") and hasClickAction())
+        val restLeft = card.fetchSemanticsNode().boundsInRoot.left
+
+        card.performTouchInput { swipeLeft(startX = right - 1f, endX = left) }
+        waitForIdle()
+        assertEquals(listOf<StreakListAction>(StreakListAction.OnDelete(gymId)), actions)
+
+        // A slow write: no timer brings it back.
+        mainClock.advanceTimeBy(10_000)
+        waitForIdle()
+        // positionInRoot is unclipped (boundsInRoot stops at the list's edge).
+        assertTrue(card.fetchSemanticsNode().positionInRoot.x < restLeft - 100f, "still swiped away")
+
+        // The write failed: the card is still listed, so it slides back.
+        state = state.copy(saveFailed = true, failedWrites = 1)
+        waitForIdle()
+        assertEquals(restLeft, card.fetchSemanticsNode().boundsInRoot.left)
+    }
+
+    @Test
+    fun reset_top_edge_is_the_reset_button_not_the_card() = runComposeUiTest {
+        val actions = mutableListOf<StreakListAction>()
+        setContent { Screen(ready(), actions) }
+        val reset = onNode(hasContentDescription("Reset Gym"))
+
+        reset.assertWidthIsAtLeast(48.dp).assertHeightIsAtLeast(48.dp)
+        reset.performTouchInput { click(Offset(centerX, 2f)) }
+        reset.performTouchInput { click(Offset(width - 2f, centerY)) }
+
+        assertEquals(List<StreakListAction>(2) { StreakListAction.OnReset(gymId) }, actions)
+    }
+
+    @Test
+    fun unreadable_buttons_reachable_with_large_text_on_a_small_screen() = runComposeUiTest {
+        setContent {
+            SmallScreenLargeText { Screen(StreakListState.Unreadable(DataError.Local.UNREADABLE, canStartFresh = true), mutableListOf()) }
+        }
+        onNodeWithText("Try again").performScrollTo().assertIsDisplayed()
+        onNodeWithText("Start fresh").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun empty_button_reachable_with_large_text_on_a_small_screen() = runComposeUiTest {
+        setContent { SmallScreenLargeText { Screen(ready(cards = emptyList()), mutableListOf()) } }
+        onNode(hasText("New streak") and hasClickAction()).performScrollTo().assertIsDisplayed()
+    }
+
+    @Composable
+    private fun SmallScreenLargeText(content: @Composable () -> Unit) {
+        val density = LocalDensity.current
+        CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale = 2f)) {
+            Box(Modifier.size(width = 320.dp, height = 420.dp)) { content() }
+        }
     }
 
     @Test

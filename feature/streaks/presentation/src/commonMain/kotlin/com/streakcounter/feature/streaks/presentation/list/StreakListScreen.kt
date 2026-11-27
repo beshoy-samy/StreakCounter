@@ -1,6 +1,16 @@
 package com.streakcounter.feature.streaks.presentation.list
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import com.streakcounter.feature.streaks.presentation.list.components.reorderItem
+import com.streakcounter.feature.streaks.presentation.list.components.rememberReorderState
+import com.streakcounter.feature.streaks.presentation.list.components.ReorderRow
+import streakcounter.feature.streaks.presentation.generated.resources.summary_day
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -46,7 +56,6 @@ import com.streakcounter.feature.streaks.presentation.format.formatDate
 import com.streakcounter.feature.streaks.presentation.format.formatNumber
 import com.streakcounter.feature.streaks.presentation.list.components.EmptyState
 import com.streakcounter.feature.streaks.presentation.list.components.OpeningSkeleton
-import com.streakcounter.feature.streaks.presentation.list.components.ReorderList
 import com.streakcounter.feature.streaks.presentation.list.components.ReorderTopBar
 import com.streakcounter.feature.streaks.presentation.list.components.StreakCard
 import com.streakcounter.feature.streaks.presentation.list.components.SwipeToDelete
@@ -100,37 +109,28 @@ fun StreakListScreen(
         },
     ) { padding ->
         when (state) {
-            StreakListState.Opening -> Column(Modifier.fillMaxSize().padding(padding)) {
-                ListHeader(today = today)
+            StreakListState.Opening -> ScrollableState(padding, today, centered = false) {
                 Spacer(Modifier.height(Spacing.s4))
                 OpeningSkeleton()
             }
-            is StreakListState.Unreadable -> Column(Modifier.fillMaxSize().padding(padding)) {
-                ListHeader(today = today)
+            is StreakListState.Unreadable -> ScrollableState(padding, today) {
                 UnreadableState(
                     error = state.error,
                     canStartFresh = state.canStartFresh,
                     onRetry = { onAction(StreakListAction.OnRetryOpen) },
                     onStartFreshConfirm = { onAction(StreakListAction.OnStartFreshConfirm) },
-                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
-            is StreakListState.Ready -> when {
-                state.reorderMode -> ReorderList(
-                    cards = state.cards,
-                    today = today,
-                    onMove = { from, to -> onAction(StreakListAction.OnMove(from, to)) },
-                    contentPadding = padding.plus(top = Spacing.s3, bottom = Spacing.s6),
-                    modifier = Modifier.fillMaxSize(),
-                )
-                state.cards.isEmpty() -> Column(Modifier.fillMaxSize().padding(padding)) {
-                    ListHeader(today = today)
+            is StreakListState.Ready -> if (state.cards.isEmpty() && !state.reorderMode) {
+                ScrollableState(padding, today) {
                     EmptyState(
                         onNewClick = { onAction(StreakListAction.OnNewClick) },
-                        modifier = Modifier.fillMaxWidth().weight(1f),
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
-                else -> StreakList(state, today, onAction, padding)
+            } else {
+                StreakList(state, today, onAction, padding)
             }
         }
     }
@@ -142,6 +142,40 @@ fun StreakListScreen(
     // `ready.celebration` / `ready.dailyGoalHit`.
 }
 
+/**
+ * Header plus one whole-screen state. At least screen-tall, with [content] centred in the space
+ * under the header when [centered]; scrolls once large text or a small window makes it taller, so
+ * Try again / Start fresh / New streak can always be reached.
+ */
+@Composable
+private fun ScrollableState(
+    padding: PaddingValues,
+    today: LocalDate?,
+    centered: Boolean = true,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    BoxWithConstraints(Modifier.fillMaxSize().padding(padding)) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .heightIn(min = maxHeight),
+        ) {
+            ListHeader(today = today)
+            // Weighted spacers share whatever height is left; with too little they are 0 and
+            // the column grows past the screen instead of squeezing the content.
+            if (centered) Spacer(Modifier.weight(1f))
+            content()
+            if (centered) Spacer(Modifier.weight(1f))
+        }
+    }
+}
+
+/**
+ * The streak list in both modes. One lazy list (and one [ReorderState]) serves normal and reorder
+ * mode, so a long-press on a card can lift it and keep dragging while the cards turn into compact
+ * rows (design: "Long-press on a card goes straight here with that card lifted").
+ */
 @Composable
 private fun StreakList(
     state: StreakListState.Ready,
@@ -149,33 +183,60 @@ private fun StreakList(
     onAction: (StreakListAction) -> Unit,
     padding: PaddingValues,
 ) {
+    val currentOnAction by rememberUpdatedState(onAction)
+    val reorderMode by rememberUpdatedState(state.reorderMode)
+    val reorder = rememberReorderState(state.cards) { from, to -> currentOnAction(StreakListAction.OnMove(from, to)) }
+    val onLift = remember { { if (!reorderMode) currentOnAction(StreakListAction.OnReorderStart) } }
+    val cards = if (state.reorderMode) reorder.order else state.cards
+
     LazyColumn(
+        state = reorder.listState,
         modifier = Modifier.fillMaxSize(),
-        // The list ends with room for the pinned FAB plus 48 dp, so the last card clears it.
-        contentPadding = padding.plus(bottom = ControlSize.control + Spacing.s4 + Spacing.s12),
+        contentPadding = if (state.reorderMode) {
+            padding.plus(top = Spacing.s3, bottom = Spacing.s6)
+        } else {
+            // The list ends with room for the pinned FAB plus 48 dp, so the last card clears it.
+            padding.plus(bottom = ControlSize.control + Spacing.s4 + Spacing.s12)
+        },
         verticalArrangement = Arrangement.spacedBy(Spacing.s3),
     ) {
-        item(key = "header") {
-            Column {
-                ListHeader(today = today, onReorder = { onAction(StreakListAction.OnReorderStart) })
-                summary(state)?.let { text ->
-                    Text(
-                        text = text,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = Spacing.s5),
-                    )
+        if (!state.reorderMode) {
+            item(key = "header") {
+                Column {
+                    ListHeader(today = today, onReorder = { onAction(StreakListAction.OnReorderStart) })
+                    summaryText(state.summary)?.let { text ->
+                        Text(
+                            text = text,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = Spacing.s5),
+                        )
+                    }
+                    if (state.savingStuck) {
+                        SavingStuckBanner(Modifier.padding(start = Spacing.s4, end = Spacing.s4, top = Spacing.s3))
+                    }
+                    Spacer(Modifier.height(Spacing.s1))
                 }
-                if (state.savingStuck) SavingStuckBanner(Modifier.padding(start = Spacing.s4, end = Spacing.s4, top = Spacing.s3))
-                Spacer(Modifier.height(Spacing.s1))
             }
         }
-        itemsIndexed(state.cards, key = { _, card -> card.id }) { index, card ->
-            SwipeToDelete(
-                onDelete = { onAction(StreakListAction.OnDelete(card.id)) },
-                modifier = Modifier.padding(horizontal = Spacing.s4).animateItem(),
+        itemsIndexed(cards, key = { _, card -> card.id }) { index, card ->
+            val dragging = reorder.draggingId == card.id
+            Box(
+                Modifier
+                    .padding(horizontal = Spacing.s4)
+                    .then(if (dragging) Modifier else Modifier.animateItem())
+                    .reorderItem(reorder, card.id, onLift),
             ) {
-                StreakCard(card = card, today = today, index = index, count = state.cards.size, onAction = onAction)
+                if (state.reorderMode) {
+                    ReorderRow(card = card, today = today, index = index, count = cards.size, reorder = reorder)
+                } else {
+                    SwipeToDelete(
+                        onDelete = { onAction(StreakListAction.OnDelete(card.id)) },
+                        failedWrites = state.failedWrites,
+                    ) {
+                        StreakCard(card = card, today = today, index = index, count = cards.size, onAction = onAction)
+                    }
+                }
             }
         }
     }
@@ -217,16 +278,15 @@ private fun ListHeader(today: LocalDate?, onReorder: (() -> Unit)? = null) {
     Spacer(Modifier.height(Spacing.s1))
 }
 
-/**
- * "Welcome back." after a streak ended while away; otherwise the check-in count for today.
- * Lists with no check-in streaks have no summary.
- */
+/** The words for the summary the ViewModel picked. */
 @Composable
-private fun summary(state: StreakListState.Ready): String? = when {
-    state.cards.any { it.endedNote != null } -> stringResource(Res.string.summary_welcome_back)
-    !state.hasCheckIns -> null
-    state.checkInsLeft == 0 -> stringResource(Res.string.summary_all_done)
-    else -> pluralStringResource(Res.plurals.summary_check_ins_left, state.checkInsLeft, formatNumber(state.checkInsLeft))
+private fun summaryText(summary: ListSummary): String? = when (summary) {
+    ListSummary.None -> null
+    is ListSummary.Day -> stringResource(Res.string.summary_day, formatNumber(summary.day))
+    ListSummary.WelcomeBack -> stringResource(Res.string.summary_welcome_back)
+    ListSummary.AllCheckedIn -> stringResource(Res.string.summary_all_done)
+    is ListSummary.CheckInsLeft ->
+        pluralStringResource(Res.plurals.summary_check_ins_left, summary.count, formatNumber(summary.count))
 }
 
 /** T4: repeated save failures are a lasting condition, not a one-off snackbar. */

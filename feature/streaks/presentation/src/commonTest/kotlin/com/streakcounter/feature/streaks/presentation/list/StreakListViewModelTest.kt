@@ -21,6 +21,7 @@ import com.streakcounter.core.testing.FakeWidgetUpdater
 import com.streakcounter.core.testing.TestClock
 import com.streakcounter.feature.streaks.domain.CelebrationMark
 import com.streakcounter.feature.streaks.domain.CelebrationSize
+import com.streakcounter.feature.streaks.domain.EndedNote
 import com.streakcounter.feature.streaks.domain.FieldError
 import com.streakcounter.feature.streaks.domain.Streak
 import com.streakcounter.feature.streaks.domain.StreakCommand
@@ -34,7 +35,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.minus
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.milliseconds
@@ -663,5 +666,102 @@ class StreakListViewModelTest {
         assertThat(h.ready.reorderMode).isFalse()
         assertThat(h.repo.current!!.map { it.id }).containsExactly(idB, idA)
         assertThat(h.ready.cards.map { it.id }).containsExactly(idB, idA)
+    }
+
+    @Test
+    fun move_one_saves_the_new_order_without_reorder_mode() = transformTest {
+        val h = harness(listOf(times(), checkIn()))
+        settle()
+
+        h.act(this, StreakListAction.OnMoveOne(idA, 1))
+
+        assertThat(h.repo.executed.single()).isEqualTo(StreakCommand.Reorder(listOf(idB, idA)))
+        assertThat(h.ready.reorderMode).isFalse()
+        assertThat(h.ready.cards.map { it.id }).containsExactly(idB, idA)
+    }
+
+    @Test
+    fun move_one_past_the_ends_does_nothing() = transformTest {
+        val h = harness(listOf(times(), checkIn()))
+        settle()
+
+        h.act(this, StreakListAction.OnMoveOne(idA, -1))
+        h.act(this, StreakListAction.OnMoveOne(idB, 1))
+
+        assertThat(h.repo.executed).isEmpty()
+    }
+
+    @Test
+    fun failed_writes_only_grow() = transformTest {
+        val h = harness(listOf(times()))
+        settle()
+        assertThat(h.ready.failedWrites).isEqualTo(0)
+
+        h.repo.shouldReturnError = DataError.Local.WRITE_FAILED
+        h.act(this, StreakListAction.OnDelete(idA))
+        h.act(this, StreakListAction.OnDelete(idA))
+        assertThat(h.ready.failedWrites).isEqualTo(2)
+
+        h.repo.shouldReturnError = null
+        h.act(this, StreakListAction.OnIncrement(idA))
+        assertThat(h.ready.failedWrites).isEqualTo(2)
+    }
+
+    // ---- Summary (R18 and the design's list states) ----
+
+    private fun daysSince(id: Uuid = idA, days: Int) = Streak(
+        id = id, name = "No smoking", type = StreakType.DAYS_SINCE, autoReset = false, goal = null, position = 0,
+        count = 0, lastCheckIn = null, startDate = day0.minus(days, DateTimeUnit.DAY), countDate = null,
+        goalReachedOn = null, celebrated = null, endedNote = null,
+    )
+
+    @Test
+    fun one_day_streak_counts_its_days() = transformTest {
+        val h = harness(listOf(checkIn(count = 4, lastCheckIn = day0.minus(1, DateTimeUnit.DAY), position = 0)))
+        settle()
+        assertThat(h.ready.summary).isEqualTo(ListSummary.Day(4))
+    }
+
+    @Test
+    fun one_days_since_streak_counts_its_days() = transformTest {
+        val h = harness(listOf(daysSince(days = 18)))
+        settle()
+        assertThat(h.ready.summary).isEqualTo(ListSummary.Day(18))
+    }
+
+    @Test
+    fun one_streak_at_zero_or_of_times_uses_the_normal_rules() = transformTest {
+        val zero = harness(listOf(daysSince(days = 0)))
+        settle()
+        assertThat(zero.ready.summary).isEqualTo(ListSummary.None)
+    }
+
+    @Test
+    fun one_times_streak_has_no_day_summary() = transformTest {
+        val h = harness(listOf(times(count = 7)))
+        settle()
+        assertThat(h.ready.summary).isEqualTo(ListSummary.None)
+    }
+
+    @Test
+    fun check_ins_left_and_all_checked_in() = transformTest {
+        val notYet = checkIn(id = idB, count = 3, lastCheckIn = day0.minus(1, DateTimeUnit.DAY))
+        val h = harness(listOf(times(), notYet))
+        settle()
+        assertThat(h.ready.summary).isEqualTo(ListSummary.CheckInsLeft(1))
+
+        h.act(this, StreakListAction.OnIncrement(idB))
+        assertThat(h.ready.summary).isEqualTo(ListSummary.AllCheckedIn)
+    }
+
+    @Test
+    fun ended_note_welcomes_back() = transformTest {
+        val ended = checkIn(id = idB, count = 0, lastCheckIn = null).copy(
+            autoReset = true,
+            endedNote = EndedNote(day0.minus(2, DateTimeUnit.DAY), 12),
+        )
+        val h = harness(listOf(times(), ended))
+        settle()
+        assertThat(h.ready.summary).isEqualTo(ListSummary.WelcomeBack)
     }
 }

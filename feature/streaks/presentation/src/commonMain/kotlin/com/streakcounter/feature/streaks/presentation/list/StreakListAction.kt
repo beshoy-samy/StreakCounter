@@ -30,6 +30,12 @@ sealed interface StreakListAction {
     data class OnMove(val from: Int, val to: Int) : StreakListAction
     data object OnReorderDone : StreakListAction
 
+    /**
+     * Outside reorder mode (TalkBack Move up / Move down on a card): moves [id] by [offset] places
+     * and saves at once.
+     */
+    data class OnMoveOne(val id: Uuid, val offset: Int) : StreakListAction
+
     /** Confirmed in the T6 dialog. */
     data object OnStartFreshConfirm : StreakListAction
 

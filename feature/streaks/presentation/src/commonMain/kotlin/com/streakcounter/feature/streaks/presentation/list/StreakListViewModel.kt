@@ -72,6 +72,7 @@ class StreakListViewModel(
     /** "Try again" taps in a row that still ended in KEY_UNAVAILABLE (R15). */
     private var keyRetries by mutableIntStateOf(0)
     private var failuresInARow by mutableIntStateOf(0)
+    private var failedWrites by mutableIntStateOf(0)
     private var validation by mutableStateOf<DraftValidation?>(null)
     private var showDiscard by mutableStateOf(false)
 
@@ -137,6 +138,7 @@ class StreakListViewModel(
             }
             is StreakListAction.OnMove -> move(action.from, action.to)
             StreakListAction.OnReorderDone -> finishReorder()
+            is StreakListAction.OnMoveOne -> moveOne(action.id, action.offset)
             StreakListAction.OnStartFreshConfirm -> startFresh()
             StreakListAction.OnRetryOpen -> {
                 val current = state.value
@@ -179,6 +181,8 @@ class StreakListViewModel(
                 DailyGoalUi(it.streakId, byId.getValue(it.streakId).name, it.value)
             },
             savingStuck = failuresInARow >= FAILURES_BEFORE_STUCK,
+            summary = summaryOf(cards),
+            failedWrites = failedWrites,
         )
     }
 
@@ -231,6 +235,7 @@ class StreakListViewModel(
             }
             is Result.Error -> {
                 failuresInARow++
+                failedWrites++
                 session.setFailed(command)
                 false
             }
@@ -394,6 +399,15 @@ class StreakListViewModel(
         pendingOrder = order
     }
 
+    private fun moveOne(id: Uuid, offset: Int) {
+        val order = readyOrNull()?.cards?.map { it.id }?.toMutableList() ?: return
+        val from = order.indexOf(id)
+        val to = from + offset
+        if (from < 0 || to !in order.indices) return
+        order.add(to, order.removeAt(from))
+        launchCommand(StreakCommand.Reorder(order))
+    }
+
     private fun finishReorder() {
         val order = pendingOrder
         session.setReorderMode(false)
@@ -421,6 +435,23 @@ class StreakListViewModel(
             goalEdited = false,
             touched = false,
         )
+    }
+}
+
+/**
+ * R18 first: a single day streak (Check-in or Days since) at 1 or more counts its days. Then an
+ * ended note welcomes the user back; then today's check-ins; lists without check-ins have none.
+ */
+private fun summaryOf(cards: List<StreakCardUi>): ListSummary {
+    val only = cards.singleOrNull()
+    val checkIns = cards.filter { it.type == StreakType.CHECK_IN }
+    val left = checkIns.count { !it.doneToday }
+    return when {
+        only != null && only.type != StreakType.TIMES && only.value >= 1 -> ListSummary.Day(only.value)
+        cards.any { it.endedNote != null } -> ListSummary.WelcomeBack
+        checkIns.isEmpty() -> ListSummary.None
+        left == 0 -> ListSummary.AllCheckedIn
+        else -> ListSummary.CheckInsLeft(left)
     }
 }
 

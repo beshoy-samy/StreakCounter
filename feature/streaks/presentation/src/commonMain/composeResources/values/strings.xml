@@ -9,6 +9,7 @@
     </plurals>
     <string name="summary_all_done">All checked in today. Nice and steady.</string>
     <string name="summary_welcome_back">Welcome back. Pick up where it feels right.</string>
+    <string name="summary_day">Day %1$s. Keep it going.</string>
     <string name="saving_stuck">Changes aren’t being saved. Free up some storage.</string>
     <string name="new_streak">New streak</string>
 

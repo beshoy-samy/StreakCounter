@@ -38,7 +38,31 @@ sealed interface StreakListState {
         val dailyGoalHit: DailyGoalUi?,
         /** T4 banner: 3 or more saves in a row failed; cleared by the next successful save. */
         val savingStuck: Boolean,
+        /** The line under the title. */
+        val summary: ListSummary,
+        /**
+         * Failed writes so far (only ever grows). A swiped-away card waits for its delete: if this
+         * grows while the card is still listed, the delete failed and the card comes back.
+         */
+        val failedWrites: Int,
     ) : StreakListState
+}
+
+/** Which summary line the header shows; the UI owns the words. */
+sealed interface ListSummary {
+    data object None : ListSummary
+
+    /** R18: the only streak is a day streak at [day] ≥ 1: "Day 4. Keep it going." */
+    data class Day(val day: Int) : ListSummary
+
+    /** A streak ended while the app was closed: "Welcome back. Pick up where it feels right." */
+    data object WelcomeBack : ListSummary
+
+    /** "One check-in left today. You’ve got this." (plural). */
+    data class CheckInsLeft(val count: Int) : ListSummary
+
+    /** "All checked in today. Nice and steady." */
+    data object AllCheckedIn : ListSummary
 }
 
 data class UndoUi(val kind: UndoKind, val name: String?, val type: StreakType)
