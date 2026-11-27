@@ -9,6 +9,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import okio.BufferedSink
 import okio.BufferedSource
+import com.streakcounter.core.data.datastore.systemFileSystem
 import okio.FileSystem
 import okio.Path
 
@@ -28,7 +29,7 @@ fun createStreakDataStore(
     aead: Aead,
     scope: CoroutineScope,
     path: Path,
-    fileSystem: FileSystem = FileSystem.SYSTEM,
+    fileSystem: FileSystem = systemFileSystem(),
 ): DataStore<StreakFile> = createEncryptedDataStore(StreakFileSerializer, aead, scope, path, fileSystem)
 
 /**

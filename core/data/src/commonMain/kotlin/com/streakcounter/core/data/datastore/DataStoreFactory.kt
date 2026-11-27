@@ -26,7 +26,7 @@ fun <T> createEncryptedDataStore(
     aead: Aead,
     scope: CoroutineScope,
     path: Path,
-    fileSystem: FileSystem = FileSystem.SYSTEM,
+    fileSystem: FileSystem = systemFileSystem(),
 ): DataStore<T> = DataStoreFactory.create(
     storage = OkioStorage(
         fileSystem = fileSystem,

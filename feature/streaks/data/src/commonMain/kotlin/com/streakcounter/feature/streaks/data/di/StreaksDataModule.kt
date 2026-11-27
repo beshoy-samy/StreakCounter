@@ -11,6 +11,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
+import com.streakcounter.core.data.datastore.systemFileSystem
 import okio.FileSystem
 import okio.Path
 import org.koin.core.module.Module
@@ -37,7 +38,7 @@ val streaksDataModule = module {
         DataStoreStreakRepository(
             dataStore = get(),
             path = get<StreakFileLocation>().path,
-            fileSystem = FileSystem.SYSTEM,
+            fileSystem = systemFileSystem(),
             today = get(),
         )
     }

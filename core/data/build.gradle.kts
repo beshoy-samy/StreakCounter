@@ -13,6 +13,8 @@ kotlin {
             implementation(projects.core.domain)
             // EncryptingSerializer implements OkioSerializer, so DataStore is part of this module's API.
             api(libs.datastore.core.okio)
+            implementation(project.dependencies.platform(libs.koin.bom))
+            implementation(libs.koin.core)
         }
         commonTest.dependencies {
             implementation(projects.core.testing)
