@@ -1,7 +1,7 @@
 # StreakCounter: design
 
 Date: 2026-11-27 · Status: draft for review
-Visual design (source of truth for look and states): `docs/design/design.html`, tokens `docs/design/tokens.json`, brief `docs/design/brief.md`. Published copy: https://claude.ai/artifact/X6Kg7d3db5zy5qbibDr1MB
+Visual design (source of truth for look and states): `docs/design/design.html`, tokens `docs/design/tokens.json`, brief `docs/design/brief.md`.
 
 ## 1. Intent
 
