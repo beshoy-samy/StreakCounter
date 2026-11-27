@@ -4,6 +4,7 @@ import assertk.assertFailure
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
+import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotEqualTo
 import kotlin.test.Test
 
@@ -81,8 +82,57 @@ class KeyStorageAeadTest {
     fun stored_key_with_wrong_size_throws_and_is_not_replaced() {
         val storage = InMemoryKeyStorage(ByteArray(16))
 
-        assertFailure { KeychainAead(storage).encrypt(plaintext, aad) }
+        assertFailure { KeychainAead(storage).encrypt(plaintext, aad) }.isInstanceOf<KeyUnavailableException>()
         assertThat(storage.read()?.size).isEqualTo(16)
+    }
+
+    @Test
+    fun keychain_read_failure_throws_KeyUnavailable_and_never_adds_a_key() {
+        val storage = FailingKeyStorage(failRead = true)
+        val aead = KeychainAead(storage)
+
+        assertFailure { aead.encrypt(plaintext, aad) }.isInstanceOf<KeyUnavailableException>()
+        assertFailure { aead.decrypt(ByteArray(40), aad) }.isInstanceOf<KeyUnavailableException>()
+        assertThat(storage.adds).isEqualTo(0)
+    }
+
+    @Test
+    fun keychain_add_failure_throws_KeyUnavailable() {
+        val storage = FailingKeyStorage(failRead = false)
+
+        assertFailure { KeychainAead(storage).encrypt(plaintext, aad) }.isInstanceOf<KeyUnavailableException>()
+        assertThat(storage.adds).isEqualTo(1)
+    }
+
+    @Test
+    fun keychain_failure_is_retried_on_the_next_call() {
+        val storage = FailingKeyStorage(failRead = true)
+        val aead = KeychainAead(storage)
+        assertFailure { aead.encrypt(plaintext, aad) }
+
+        storage.failRead = false
+        storage.failAdd = false
+
+        assertThat(aead.decrypt(aead.encrypt(plaintext, aad), aad).decodeToString()).isEqualTo("No smoking")
+    }
+
+    /** Keychain errors such as errSecInteractionNotAllowed (device locked since boot). */
+    private class FailingKeyStorage(var failRead: Boolean, var failAdd: Boolean = true) : KeyStorage {
+        private var key: ByteArray? = null
+        var adds = 0
+            private set
+
+        override fun read(): ByteArray? {
+            if (failRead) throw KeychainException("SecItemCopyMatching", -25308)
+            return key?.copyOf()
+        }
+
+        override fun add(key: ByteArray): Boolean {
+            adds++
+            if (failAdd) throw KeychainException("SecItemAdd", -25308)
+            this.key = key.copyOf()
+            return true
+        }
     }
 
     private class InMemoryKeyStorage(

@@ -1,6 +1,7 @@
 package com.streakcounter.core.testing
 
 import com.streakcounter.core.data.crypto.Aead
+import com.streakcounter.core.data.crypto.KeyUnavailableException
 import kotlin.random.Random
 
 /**
@@ -9,19 +10,26 @@ import kotlin.random.Random
  * NOT secure. The "cipher" XORs with a stream derived from [key] and the nonce, and the tag is a
  * keyed checksum over key, nonce, associated data and ciphertext. That is enough for tests to see
  * that tampering, a wrong key or wrong associated data make [decrypt] throw.
+ *
+ * Set [keyUnavailable] to make both operations throw [KeyUnavailableException], like a Keystore or
+ * Keychain failure on a real device.
  */
 class FakeAead(
     private val key: ByteArray = DEFAULT_KEY,
     private val random: Random = Random.Default,
 ) : Aead {
 
+    var keyUnavailable: Boolean = false
+
     override fun encrypt(plaintext: ByteArray, associatedData: ByteArray): ByteArray {
+        if (keyUnavailable) throw KeyUnavailableException()
         val nonce = random.nextBytes(NONCE_SIZE)
         val body = xorStream(plaintext, nonce)
         return nonce + body + tag(nonce, body, associatedData)
     }
 
     override fun decrypt(ciphertext: ByteArray, associatedData: ByteArray): ByteArray {
+        if (keyUnavailable) throw KeyUnavailableException()
         if (ciphertext.size < NONCE_SIZE + TAG_SIZE) throw FakeAeadException("Ciphertext too short")
         val nonce = ciphertext.copyOfRange(0, NONCE_SIZE)
         val body = ciphertext.copyOfRange(NONCE_SIZE, ciphertext.size - TAG_SIZE)

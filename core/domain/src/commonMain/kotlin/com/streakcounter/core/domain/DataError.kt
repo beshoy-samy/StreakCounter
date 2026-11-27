@@ -22,6 +22,8 @@ sealed interface DataError : Error {
         NOT_FOUND,
         UNREADABLE,
         WRITE_FAILED,
+        /** The encryption key can't be reached right now. The file may be fine: retry, never start fresh. */
+        KEY_UNAVAILABLE,
         UNKNOWN
     }
 }

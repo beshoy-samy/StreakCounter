@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Android 12+ (API 31+). The streak file is encrypted with a Keystore key that never leaves this
+    device, so a backed-up or transferred copy could never be decrypted: it would only show the
+    "Couldn't open your streaks" screen on the new phone. Exclude it (and DataStore's scratch file).
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="file" path="datastore/streaks.enc" />
+        <exclude domain="file" path="datastore/streaks.enc.tmp" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="file" path="datastore/streaks.enc" />
+        <exclude domain="file" path="datastore/streaks.enc.tmp" />
+    </device-transfer>
+</data-extraction-rules>

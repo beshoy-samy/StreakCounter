@@ -14,6 +14,7 @@ import assertk.assertions.isNotEqualTo
 import assertk.assertions.isNull
 import assertk.assertions.messageContains
 import assertk.assertions.prop
+import com.streakcounter.core.data.crypto.KeyUnavailableException
 import com.streakcounter.core.testing.FakeAead
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -146,6 +147,52 @@ class EncryptingSerializerTest {
             assertFailure { store.data.first() }.isInstanceOf<CorruptionException>()
             assertFailure { store.updateData { "overwritten" } }.isInstanceOf<CorruptionException>()
             assertThat(FileSystem.SYSTEM.read(file) { readByteArray() }.toList()).isEqualTo(foreign.toList())
+        } finally {
+            FileSystem.SYSTEM.deleteRecursively(dir)
+        }
+    }
+
+    @Test
+    fun key_unavailable_on_read_propagates_and_is_not_corruption() = runTest {
+        val aead = FakeAead()
+        val keyed = EncryptingSerializer(StringSerializer, aead, fileName)
+        val bytes = keyed.encode("No smoking")
+        aead.keyUnavailable = true
+
+        assertFailure { keyed.decode(bytes) }.isInstanceOf<KeyUnavailableException>()
+    }
+
+    @Test
+    fun key_unavailable_on_write_propagates() = runTest {
+        val aead = FakeAead().apply { keyUnavailable = true }
+        val keyed = EncryptingSerializer(StringSerializer, aead, fileName)
+
+        assertFailure { keyed.encode("No smoking") }.isInstanceOf<KeyUnavailableException>()
+    }
+
+    @Test
+    fun dataStore_never_overwrites_when_the_key_is_unavailable() = runTest {
+        val dir = FileSystem.SYSTEM_TEMPORARY_DIRECTORY / "encrypting-serializer-${Random.nextLong()}"
+        val file = dir / "streaks.enc"
+        FileSystem.SYSTEM.createDirectories(dir)
+        try {
+            val aead = FakeAead()
+            val keyed = EncryptingSerializer(StringSerializer, aead, fileName)
+            val good = keyed.encode("No smoking")
+            FileSystem.SYSTEM.write(file) { write(good) }
+            aead.keyUnavailable = true
+            val store = DataStoreFactory.create(
+                storage = OkioStorage(FileSystem.SYSTEM, keyed) { file.toString().toPath() },
+                scope = backgroundScope,
+            )
+
+            assertFailure { store.data.first() }.isInstanceOf<KeyUnavailableException>()
+            assertFailure { store.updateData { "overwritten" } }.isInstanceOf<KeyUnavailableException>()
+            assertThat(FileSystem.SYSTEM.read(file) { readByteArray() }.toList()).isEqualTo(good.toList())
+
+            // The key is back: the same file reads fine, nothing was lost.
+            aead.keyUnavailable = false
+            assertThat(store.data.first()).isEqualTo("No smoking")
         } finally {
             FileSystem.SYSTEM.deleteRecursively(dir)
         }

@@ -9,6 +9,8 @@ kotlin {
             api(projects.core.domain)
             // FakeAead implements core:data's Aead.
             api(projects.core.data)
+            // FakeStreakRepository, FakeWidgetUpdater implement the streaks domain interfaces.
+            api(projects.feature.streaks.domain)
             api(libs.kotlin.test)
             api(libs.assertk)
             api(libs.turbine)

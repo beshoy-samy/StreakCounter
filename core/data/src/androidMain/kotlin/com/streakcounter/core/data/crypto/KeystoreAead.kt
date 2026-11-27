@@ -2,8 +2,10 @@ package com.streakcounter.core.data.crypto
 
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
+import java.io.IOException
 import java.security.GeneralSecurityException
 import java.security.KeyStore
+import java.security.ProviderException
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -38,10 +40,23 @@ class KeystoreAead(private val alias: String = DEFAULT_ALIAS) : Aead {
     /**
      * Returns the stored key, or generates it when the alias has no entry. A failing lookup
      * throws and never generates a new key, so an existing key is never replaced.
+     *
+     * Keystore failures while loading or generating the key (KeyStoreException,
+     * UnrecoverableKeyException, ProviderException, ...) throw [KeyUnavailableException]: they say
+     * nothing about the file. Tag failures happen in [decrypt] and are not wrapped.
      */
     private fun key(): SecretKey = synchronized(lock) {
-        val keyStore = KeyStore.getInstance(KEYSTORE).apply { load(null) }
-        (keyStore.getKey(alias, null) as SecretKey?) ?: generateKey()
+        try {
+            val keyStore = KeyStore.getInstance(KEYSTORE).apply { load(null) }
+            (keyStore.getKey(alias, null) as SecretKey?) ?: generateKey()
+        } catch (e: GeneralSecurityException) {
+            throw KeyUnavailableException(e)
+        } catch (e: ProviderException) {
+            throw KeyUnavailableException(e)
+        } catch (e: IOException) {
+            // KeyStore.load
+            throw KeyUnavailableException(e)
+        }
     }
 
     private fun generateKey(): SecretKey {

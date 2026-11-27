@@ -3,6 +3,7 @@ package com.streakcounter.core.data.datastore
 import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.okio.OkioSerializer
 import com.streakcounter.core.data.crypto.Aead
+import com.streakcounter.core.data.crypto.KeyUnavailableException
 import kotlinx.coroutines.CancellationException
 import okio.Buffer
 import okio.BufferedSink
@@ -20,6 +21,9 @@ const val ENVELOPE_VERSION: Byte = 1
  * Only a zero-byte file reads as [defaultValue]. Anything else that cannot be decrypted or parsed
  * throws [CorruptionException], so DataStore never treats an unreadable file as empty and never
  * overwrites it. Exception messages carry the error type only, never file content.
+ *
+ * [KeyUnavailableException] from [aead] passes through unchanged: a missing key says nothing about
+ * the file, so it must not look like corruption (which offers "Start fresh" and deletes the file).
  */
 class EncryptingSerializer<T>(
     private val delegate: OkioSerializer<T>,
@@ -41,6 +45,8 @@ class EncryptingSerializer<T>(
         val plaintext = try {
             aead.decrypt(envelope.copyOfRange(1, envelope.size), boundAssociatedData)
         } catch (e: CancellationException) {
+            throw e
+        } catch (e: KeyUnavailableException) {
             throw e
         } catch (e: Exception) {
             throw CorruptionException("Could not decrypt file (${e.typeName()})")

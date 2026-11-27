@@ -26,14 +26,21 @@ class KeychainAead internal constructor(private val storage: KeyStorage) : Aead 
 
     // Thread-safe; a failed load throws and is retried on the next call.
     private val cipher: IvAuthenticatedCipher by lazy {
-        val rawKey = loadOrCreateKey()
+        // Everything here is key access (Keychain read/add, key size, key import). None of it can
+        // tell whether the file is fine, so it is reported as KeyUnavailableException, never as a
+        // decrypt failure. Tag checks happen later, in decrypt, and stay ordinary failures.
         try {
-            CryptographyProvider.CryptoKit.get(AES.GCM)
-                .keyDecoder()
-                .decodeFromByteArrayBlocking(AES.Key.Format.RAW, rawKey)
-                .cipher()
-        } finally {
-            rawKey.fill(0)
+            val rawKey = loadOrCreateKey()
+            try {
+                CryptographyProvider.CryptoKit.get(AES.GCM)
+                    .keyDecoder()
+                    .decodeFromByteArrayBlocking(AES.Key.Format.RAW, rawKey)
+                    .cipher()
+            } finally {
+                rawKey.fill(0)
+            }
+        } catch (e: Exception) {
+            throw KeyUnavailableException(e)
         }
     }
 
