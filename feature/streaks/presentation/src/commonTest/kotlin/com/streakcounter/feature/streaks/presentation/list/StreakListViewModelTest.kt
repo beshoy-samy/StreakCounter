@@ -26,10 +26,12 @@ import com.streakcounter.feature.streaks.domain.Streak
 import com.streakcounter.feature.streaks.domain.StreakCommand
 import com.streakcounter.feature.streaks.domain.StreakEdit
 import com.streakcounter.feature.streaks.domain.StreakType
+import com.streakcounter.feature.streaks.domain.WidgetUpdater
 import com.streakcounter.feature.streaks.presentation.session.StreakSession
 import com.streakcounter.feature.streaks.presentation.session.UndoKind
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.LocalDate
@@ -62,7 +64,7 @@ class StreakListViewModelTest {
         val vm: StreakListViewModel,
         val repo: FakeStreakRepository,
         val today: FakeToday,
-        val widgets: FakeWidgetUpdater,
+        val widgets: WidgetUpdater,
         val session: StreakSession,
     ) {
         val state: StreakListState get() = vm.state.value
@@ -73,12 +75,12 @@ class StreakListViewModelTest {
     private fun TransformTestScope.harness(
         streaks: List<Streak> = emptyList(),
         readError: DataError.Local? = null,
+        widgets: WidgetUpdater = FakeWidgetUpdater(),
     ): Harness {
         Dispatchers.setMain(testDispatcher)
         val today = FakeToday(day0)
         val repo = FakeStreakRepository(today, streaks, newId = { idNew })
         readError?.let(repo::emitReadError)
-        val widgets = FakeWidgetUpdater()
         val session = StreakSession(StateStore())
         val clock = TestClock(Instant.fromEpochSeconds(1_800_000_000)) { testCoroutineScheduler.currentTime }
         val vm = StreakListViewModel(repo, today, session, clock, widgets, dispatcher = testDispatcher)
@@ -226,6 +228,19 @@ class StreakListViewModelTest {
     }
 
     @Test
+    fun double_start_fresh_confirm_resets_once() = transformTest {
+        val h = harness(readError = DataError.Local.KEY_UNAVAILABLE)
+        settle()
+        repeat(3) { h.act(this, StreakListAction.OnRetryOpen) }
+
+        h.vm.onAction(StreakListAction.OnStartFreshConfirm)
+        h.vm.onAction(StreakListAction.OnStartFreshConfirm)
+        settle()
+
+        assertThat(h.repo.resetStorageCalls).isEqualTo(1)
+    }
+
+    @Test
     fun start_fresh_does_nothing_when_it_is_not_offered() = transformTest {
         val h = harness(readError = DataError.Local.KEY_UNAVAILABLE)
         settle()
@@ -254,6 +269,36 @@ class StreakListViewModelTest {
         advanceTimeBy(1.milliseconds)
         settle()
         assertThat(h.ready.undo).isNull()
+    }
+
+    // Fix round 1: the widget refresh must never hold up or lose the undo offer.
+    @Test
+    fun throwing_widget_refresh_still_offers_undo() = transformTest {
+        val widgets = object : WidgetUpdater {
+            override suspend fun updateAll() = throw IllegalStateException("Glance broke")
+        }
+        val h = harness(listOf(times(), checkIn()), widgets = widgets)
+        settle()
+
+        h.act(this, StreakListAction.OnDelete(idA))
+
+        assertThat(h.ready.undo).isEqualTo(UndoUi(UndoKind.DELETE, "Gym", StreakType.TIMES))
+        assertThat(h.ready.saveFailed).isFalse()
+        h.act(this, StreakListAction.OnUndo)
+        assertThat(h.ready.cards.map { it.id }).containsExactly(idA, idB)
+    }
+
+    @Test
+    fun hanging_widget_refresh_still_offers_undo() = transformTest {
+        val widgets = object : WidgetUpdater {
+            override suspend fun updateAll() = awaitCancellation()
+        }
+        val h = harness(listOf(times()), widgets = widgets)
+        settle()
+
+        h.act(this, StreakListAction.OnReset(idA))
+
+        assertThat(h.ready.undo).isEqualTo(UndoUi(UndoKind.RESET, "Gym", StreakType.TIMES))
     }
 
     @Test
@@ -317,7 +362,7 @@ class StreakListViewModelTest {
 
         assertThat(h.ready.saveFailed).isTrue()
         assertThat(h.card(idA).value).isEqualTo(5)
-        assertThat(h.widgets.updateAllCalls).isEqualTo(0)
+        assertThat((h.widgets as FakeWidgetUpdater).updateAllCalls).isEqualTo(0)
 
         h.repo.shouldReturnError = null
         h.act(this, StreakListAction.OnRetry)
@@ -369,7 +414,7 @@ class StreakListViewModelTest {
         h.act(this, StreakListAction.OnIncrement(idA))
         h.act(this, StreakListAction.OnDecrement(idA))
 
-        assertThat(h.widgets.updateAllCalls).isEqualTo(2)
+        assertThat((h.widgets as FakeWidgetUpdater).updateAllCalls).isEqualTo(2)
     }
 
     // ---- Celebrations ----
@@ -467,7 +512,40 @@ class StreakListViewModelTest {
         assertThat(stored.count).isEqualTo(3)
         assertThat(stored.goal).isEqualTo(10)
         assertThat(h.card(idNew).value).isEqualTo(3)
-        assertThat(h.widgets.updateAllCalls).isEqualTo(1)
+        assertThat((h.widgets as FakeWidgetUpdater).updateAllCalls).isEqualTo(1)
+    }
+
+    // Fix round 1: a double tap on Save must not create two streaks.
+    @Test
+    fun double_save_creates_one_streak() = transformTest {
+        val h = harness()
+        settle()
+        h.act(this, StreakListAction.OnNewClick)
+        h.act(this, StreakListAction.OnDraftChange(h.ready.sheet!!.draft.copy(name = "Gym")))
+
+        h.vm.onAction(StreakListAction.OnSave)
+        h.vm.onAction(StreakListAction.OnSave)
+        settle()
+
+        assertThat(h.repo.executed.filterIsInstance<StreakCommand.Create>().size).isEqualTo(1)
+        assertThat(h.repo.current!!.size).isEqualTo(1)
+        assertThat(h.ready.sheet).isNull()
+    }
+
+    @Test
+    fun save_can_be_tried_again_after_a_failed_save() = transformTest {
+        val h = harness()
+        settle()
+        h.act(this, StreakListAction.OnNewClick)
+        h.repo.shouldReturnError = DataError.Local.WRITE_FAILED
+        h.act(this, StreakListAction.OnSave)
+        assertThat(h.ready.sheet).isNotNull()
+
+        h.repo.shouldReturnError = null
+        h.act(this, StreakListAction.OnSave)
+
+        assertThat(h.repo.current!!.size).isEqualTo(1)
+        assertThat(h.ready.sheet).isNull()
     }
 
     @Test

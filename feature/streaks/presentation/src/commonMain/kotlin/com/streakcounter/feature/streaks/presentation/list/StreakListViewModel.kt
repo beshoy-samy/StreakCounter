@@ -33,6 +33,7 @@ import com.streakcounter.feature.streaks.domain.valueOn
 import com.streakcounter.feature.streaks.presentation.session.StreakSession
 import com.streakcounter.feature.streaks.presentation.session.UndoEntry
 import com.streakcounter.feature.streaks.presentation.session.UndoKind
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -78,6 +79,11 @@ class StreakListViewModel(
     private var pendingOrder by mutableStateOf<List<Uuid>?>(null)
 
     private var undoTimer: Job? = null
+
+    // In-flight guards: a second tap while the first write runs is ignored (no duplicate Create,
+    // no second reset). Checked and set on the main thread, before anything is launched.
+    private var saveJob: Job? = null
+    private var startFreshJob: Job? = null
 
     val state: State<StreakListState> = transform<StreakListState>(
         initialValue = StreakListState.Opening,
@@ -201,9 +207,8 @@ class StreakListViewModel(
 
     // ---- Commands ----
 
-    private fun launchCommand(command: StreakCommand, onSuccess: () -> Unit = {}) {
+    private fun launchCommand(command: StreakCommand, onSuccess: () -> Unit = {}): Job =
         viewModelScope.launch { if (execute(command)) onSuccess() }
-    }
 
     /**
      * Runs [command] against the stored file. Success refreshes the widgets and offers undo for a
@@ -214,13 +219,14 @@ class StreakListViewModel(
         when (val result = repository.execute(command)) {
             is Result.Success -> {
                 failuresInARow = 0
-                widgetUpdater.updateAll()
                 val before = result.data
                 when {
                     before == null -> Unit
                     command is StreakCommand.Reset -> offerUndo(before, UndoKind.RESET, RESET_UNDO)
                     command is StreakCommand.Delete -> offerUndo(before, UndoKind.DELETE, DELETE_UNDO)
                 }
+                // Session and state first; the widgets follow on their own.
+                refreshWidgets()
                 true
             }
             is Result.Error -> {
@@ -245,18 +251,35 @@ class StreakListViewModel(
      */
     private fun startFresh() {
         val offered = state.value as? StreakListState.Unreadable ?: return
-        if (!offered.canStartFresh) return
-        viewModelScope.launch {
+        if (!offered.canStartFresh || startFreshJob?.isActive == true) return
+        startFreshJob = viewModelScope.launch {
             val result = when (offered.error) {
                 DataError.Local.KEY_UNAVAILABLE -> repository.resetUnreadableStorage()
                 else -> repository.startFresh()
             }
             if (result is Result.Success) {
                 keyRetries = 0
-                widgetUpdater.updateAll()
+                refreshWidgets()
             }
             // Read again either way: an emptied file shows the empty list, a refusal shows why.
             openAttempt++
+        }
+    }
+
+    /**
+     * Redraws the widgets in its own coroutine. A slow or failing widget update never delays or
+     * breaks the command that was already saved (disk stays the truth; widgets catch up on their
+     * next refresh).
+     */
+    private fun refreshWidgets() {
+        viewModelScope.launch {
+            try {
+                widgetUpdater.updateAll()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // Nothing to show the user; never log streak content.
+            }
         }
     }
 
@@ -336,8 +359,9 @@ class StreakListViewModel(
             validation = result
             return
         }
+        if (saveJob?.isActive == true) return
         // Repository commands apply `today` when they run, so a save after midnight uses the new day.
-        launchCommand(draft.toCommand()) { closeSheet() }
+        saveJob = launchCommand(draft.toCommand()) { closeSheet() }
     }
 
     private fun StreakDraft.toCommand(): StreakCommand {
