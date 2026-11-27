@@ -6,7 +6,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.onNodeWithTag
@@ -20,6 +22,10 @@ import com.streakcounter.feature.streaks.domain.DraftValidation
 import com.streakcounter.feature.streaks.domain.FieldError
 import com.streakcounter.feature.streaks.domain.StreakDraft
 import com.streakcounter.feature.streaks.domain.StreakType
+import com.streakcounter.feature.streaks.domain.validate
+import com.streakcounter.feature.streaks.presentation.list.SheetField
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import com.streakcounter.feature.streaks.presentation.UiTestBase
 import com.streakcounter.feature.streaks.presentation.list.SheetUi
 import com.streakcounter.feature.streaks.presentation.list.StreakListAction
@@ -49,8 +55,9 @@ class StreakSheetUiTest : UiTestBase() {
         type: StreakType = StreakType.CHECK_IN,
         start: String = "0",
         goal: String = "",
-        autoReset: Boolean = false,
+        autoReset: Boolean = true,
         editingId: Uuid? = null,
+        goalEdited: Boolean = false,
     ) = StreakDraft(
         editingId = editingId,
         name = "",
@@ -58,7 +65,7 @@ class StreakSheetUiTest : UiTestBase() {
         startValue = start,
         goal = goal,
         autoReset = autoReset,
-        goalEdited = false,
+        goalEdited = goalEdited,
         touched = false,
     )
 
@@ -76,6 +83,10 @@ class StreakSheetUiTest : UiTestBase() {
         goalReachedOn = goalReachedOn,
         showDiscard = showDiscard,
     )
+
+    private fun hasError(text: String) = SemanticsMatcher("error = $text") {
+        SemanticsProperties.Error in it.config && it.config[SemanticsProperties.Error] == text
+    }
 
     @Test
     fun days_since_hides_switch_and_shows_callout() = runComposeUiTest {
@@ -96,7 +107,7 @@ class StreakSheetUiTest : UiTestBase() {
     fun times_reset_switch_relabels_goal_live() = runComposeUiTest {
         val actions = mutableListOf<StreakListAction>()
         setContent {
-            var state by remember { mutableStateOf(sheet(draft(type = StreakType.TIMES))) }
+            var state by remember { mutableStateOf(sheet(draft(type = StreakType.TIMES, autoReset = false))) }
             StreakTheme(darkTheme = false) {
                 TestSheet(state, onAction = {
                     actions += it
@@ -119,25 +130,100 @@ class StreakSheetUiTest : UiTestBase() {
     }
 
     @Test
-    fun errors_render_under_fields_and_focus_first_invalid() = runComposeUiTest {
+    fun invalid_start_shows_error_and_save_focuses_it() = runComposeUiTest {
         val actions = mutableListOf<StreakListAction>()
-        val invalid = draft(start = "12.5", goal = "10")
+        val invalid = draft(start = "12.5", goal = "30")
         setContent {
             StreakTheme(darkTheme = false) {
-                TestSheet(
-                    sheet(invalid, validation = DraftValidation(FieldError.WHOLE_NUMBER, FieldError.GOAL_NOT_ABOVE_COUNT)),
-                    onAction = { actions += it },
-                )
+                TestSheet(sheet(invalid, validation = invalid.validate()), onAction = { actions += it })
             }
         }
 
         onNodeWithText("Use a whole number").assertExists()
-        onNodeWithText("Make it more than 12").assertExists()
+        onNodeWithTag(SHEET_START_TAG).assert(hasError("Use a whole number"))
 
         onNodeWithText("Save streak").performScrollTo().performClick()
 
         onNodeWithTag(SHEET_START_TAG).assertIsFocused()
         assertEquals(listOf<StreakListAction>(StreakListAction.OnSave), actions)
+    }
+
+    @Test
+    fun goal_not_above_count_shows_error_and_save_focuses_the_goal() = runComposeUiTest {
+        val actions = mutableListOf<StreakListAction>()
+        val invalid = draft(start = "12", goal = "10", goalEdited = true)
+        val validation = invalid.validate()
+        assertEquals(FieldError.GOAL_NOT_ABOVE_COUNT, validation.goalError)
+        assertEquals(null, validation.startError)
+        setContent {
+            StreakTheme(darkTheme = false) {
+                TestSheet(sheet(invalid, validation = validation), onAction = { actions += it })
+            }
+        }
+
+        onNodeWithText("Make it more than 12").assertExists()
+        onNodeWithTag(SHEET_GOAL_TAG).assert(hasError("Make it more than 12"))
+
+        onNodeWithText("Save streak").performScrollTo().performClick()
+
+        onNodeWithTag(SHEET_GOAL_TAG).assertIsFocused()
+        assertEquals(listOf<StreakListAction>(StreakListAction.OnSave), actions)
+    }
+
+    @Test
+    fun leaving_a_typed_field_sends_blur_but_an_untouched_field_does_not() = runComposeUiTest {
+        val actions = mutableListOf<StreakListAction>()
+        setContent {
+            StreakTheme(darkTheme = false) { TestSheet(sheet(), onAction = { actions += it }) }
+        }
+
+        // Focus and leave the goal without typing: nothing.
+        onNodeWithTag(SHEET_GOAL_TAG).performClick()
+        onNodeWithTag(SHEET_START_TAG).performClick()
+        assertTrue(actions.none { it is StreakListAction.OnFieldBlur })
+
+        // Type in the start field, then move to the goal: blur for START.
+        onNodeWithTag(SHEET_START_TAG).performTextInput("1.5")
+        onNodeWithTag(SHEET_GOAL_TAG).performClick()
+        assertEquals(
+            listOf<StreakListAction>(StreakListAction.OnFieldBlur(SheetField.START)),
+            actions.filterIsInstance<StreakListAction.OnFieldBlur>(),
+        )
+    }
+
+    @Test
+    fun name_is_cut_at_200_characters() = runComposeUiTest {
+        val actions = mutableListOf<StreakListAction>()
+        setContent {
+            StreakTheme(darkTheme = false) { TestSheet(sheet(), onAction = { actions += it }) }
+        }
+
+        onNodeWithTag(SHEET_NAME_TAG).performTextInput("x".repeat(300))
+
+        assertEquals(200, (actions.single() as StreakListAction.OnDraftChange).draft.name.length)
+    }
+
+    @Test
+    fun new_check_in_has_switch_on_and_switching_to_times_keeps_it_on() = runComposeUiTest {
+        setContent {
+            var state by remember { mutableStateOf(sheet()) }
+            StreakTheme(darkTheme = false) {
+                TestSheet(state, onAction = {
+                    if (it is StreakListAction.OnDraftChange) state = state.copy(draft = it.draft)
+                })
+            }
+        }
+
+        onNode(isToggleable()).assertIsOn()
+        onNodeWithText("Break the streak if I miss a day").assertExists()
+
+        onNodeWithText("Times").performClick()
+        onNode(isToggleable()).assertIsOn()
+        onNodeWithText("Reset at midnight").assertExists()
+        onNodeWithText("Daily goal (optional)").assertExists()
+
+        onNodeWithText("Days since").performClick()
+        onNode(isToggleable()).assertDoesNotExist()
     }
 
     @Test

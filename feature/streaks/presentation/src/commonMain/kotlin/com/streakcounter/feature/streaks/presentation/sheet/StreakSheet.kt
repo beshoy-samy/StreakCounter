@@ -44,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
@@ -54,6 +55,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.unit.dp
 import com.mohamedrejeb.calf.ui.sheet.AdaptiveBottomSheet
 import com.mohamedrejeb.calf.ui.sheet.rememberAdaptiveSheetState
@@ -69,6 +72,7 @@ import com.streakcounter.feature.streaks.domain.validate
 import com.streakcounter.feature.streaks.presentation.format.DateSkeleton
 import com.streakcounter.feature.streaks.presentation.format.formatDate
 import com.streakcounter.feature.streaks.presentation.format.formatNumber
+import com.streakcounter.feature.streaks.presentation.list.SheetField
 import com.streakcounter.feature.streaks.presentation.list.SheetUi
 import com.streakcounter.feature.streaks.presentation.list.StreakListAction
 import org.jetbrains.compose.resources.StringResource
@@ -127,6 +131,9 @@ internal const val SHEET_NAME_TAG = "sheet_name"
 internal const val SHEET_START_TAG = "sheet_start"
 internal const val SHEET_GOAL_TAG = "sheet_goal"
 
+/** R20: the longest name the field accepts; a paste beyond it is cut before it reaches the draft. */
+internal const val MAX_NAME_LENGTH = 200
+
 /**
  * Create / edit sheet (spec 4.4). The draft lives in the ViewModel: every edit goes out as
  * OnDraftChange and comes back in [sheet]. Compose owns only focus, scroll and the sheet's own
@@ -140,6 +147,11 @@ fun StreakSheet(sheet: SheetUi, onAction: (StreakListAction) -> Unit) {
     // the sheet appear again with the draft the ViewModel still holds.
     var generation by remember { mutableIntStateOf(0) }
     var hiddenByGesture by remember { mutableStateOf(false) }
+    val keepEditing = {
+        onAction(StreakListAction.OnKeepEditing)
+        if (hiddenByGesture) generation++
+        hiddenByGesture = false
+    }
 
     key(generation) {
         AdaptiveBottomSheet(
@@ -156,18 +168,14 @@ fun StreakSheet(sheet: SheetUi, onAction: (StreakListAction) -> Unit) {
             ),
         ) {
             StreakSheetContent(sheet, onAction)
+            // Inside the sheet's own window/view controller: on iOS a dialog from the screen
+            // underneath would open behind the native sheet. Gone once the sheet was swiped away.
+            if (!hiddenByGesture) StreakSheetDialogs(sheet, onAction, keepEditing)
         }
     }
 
-    StreakSheetDialogs(
-        sheet = sheet,
-        onAction = onAction,
-        onKeepEditing = {
-            onAction(StreakListAction.OnKeepEditing)
-            if (hiddenByGesture) generation++
-            hiddenByGesture = false
-        },
-    )
+    // After a swipe or scrim tap the sheet is hidden, so the dialog goes on the screen itself.
+    if (hiddenByGesture) StreakSheetDialogs(sheet, onAction, keepEditing)
 }
 
 /** T6 discard confirm. Kept out of the sheet window so it also works when the sheet is native. */
@@ -210,16 +218,15 @@ internal fun StreakSheetContent(sheet: SheetUi, onAction: (StreakListAction) -> 
             LockedType(sheet.lockedType ?: draft.type)
         } else {
             TypePicker(draft.type) { type ->
-                // One switch serves two meanings (break on a missed day / reset at midnight), so a
-                // new type starts from off rather than carrying the other meaning over.
-                change(draft.copy(type = type, autoReset = false))
+                // R19: Check-in and Times start with their switch on; Days since has none.
+                change(draft.copy(type = type, autoReset = type != StreakType.DAYS_SINCE))
             }
         }
 
         val dailyGoal = draft.type == StreakType.TIMES && draft.autoReset
         val count = countText(draft.startValue)
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s3), verticalAlignment = Alignment.Top) {
-            SheetField(
+            LabelledField(
                 value = draft.startValue,
                 onValueChange = { change(draft.copy(startValue = it)) },
                 label = stringResource(startLabel(draft.type, sheet.isEdit)),
@@ -233,9 +240,10 @@ internal fun StreakSheetContent(sheet: SheetUi, onAction: (StreakListAction) -> 
                 },
                 imeAction = ImeAction.Next,
                 onImeAction = { goalFocus.requestFocus() },
+                onBlurAfterTyping = { onAction(StreakListAction.OnFieldBlur(SheetField.START)) },
                 modifier = Modifier.weight(1f),
             )
-            SheetField(
+            LabelledField(
                 value = draft.goal,
                 onValueChange = { change(draft.copy(goal = it)) },
                 label = stringResource(if (dailyGoal) Res.string.goal_label_daily else Res.string.goal_label),
@@ -246,6 +254,7 @@ internal fun StreakSheetContent(sheet: SheetUi, onAction: (StreakListAction) -> 
                 helper = goalHelper(draft, sheet, dailyGoal),
                 imeAction = ImeAction.Done,
                 onImeAction = { focusManager.clearFocus() },
+                onBlurAfterTyping = { onAction(StreakListAction.OnFieldBlur(SheetField.GOAL)) },
                 modifier = Modifier.weight(1f),
             )
         }
@@ -325,12 +334,13 @@ private fun SheetHeader(isEdit: Boolean, onClose: () -> Unit) {
 
 @Composable
 private fun NameField(value: String, optional: Boolean, onValueChange: (String) -> Unit) {
-    SheetField(
+    LabelledField(
         value = value,
         onValueChange = onValueChange,
         label = stringResource(if (optional) Res.string.field_name_optional else Res.string.field_name),
         placeholder = stringResource(Res.string.field_name_placeholder),
         tag = SHEET_NAME_TAG,
+        maxLength = MAX_NAME_LENGTH,
         keyboardType = KeyboardType.Text,
         capitalization = KeyboardCapitalization.Sentences,
         imeAction = ImeAction.Next,
@@ -343,7 +353,7 @@ private fun NameField(value: String, optional: Boolean, onValueChange: (String) 
  * it. The error is also set as the field's error semantics so a screen reader announces it.
  */
 @Composable
-private fun SheetField(
+private fun LabelledField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
@@ -357,8 +367,18 @@ private fun SheetField(
     capitalization: KeyboardCapitalization = KeyboardCapitalization.None,
     imeAction: ImeAction = ImeAction.Next,
     onImeAction: (() -> Unit)? = null,
+    onBlurAfterTyping: (() -> Unit)? = null,
+    maxLength: Int? = null,
 ) {
     val focusManager = LocalFocusManager.current
+    // Compose-owned: has the user typed here, and was the field focused a moment ago.
+    var typed by remember { mutableStateOf(false) }
+    var hadFocus by remember { mutableStateOf(false) }
+    // The text being edited lives here too: the ViewModel's answer arrives a few frames after
+    // each key, and feeding that older value back dropped characters and moved the cursor while
+    // typing fast. The draft in the ViewModel still gets every change and stays the source of
+    // truth; this copy is taken from it whenever the sheet (re)opens.
+    var field by remember { mutableStateOf(TextFieldValue(value)) }
     Column(modifier) {
         Text(
             text = label,
@@ -367,11 +387,30 @@ private fun SheetField(
             modifier = Modifier.padding(bottom = Spacing.s1),
         )
         OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
+            value = field,
+            onValueChange = { next ->
+                val capped = if (maxLength != null && next.text.length > maxLength) {
+                    next.copy(text = next.text.take(maxLength), selection = TextRange(maxLength))
+                } else {
+                    next
+                }
+                val textChanged = capped.text != field.text
+                field = capped
+                if (textChanged) {
+                    typed = true
+                    onValueChange(capped.text)
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
+                .onFocusChanged {
+                    if (hadFocus && !it.isFocused && typed) {
+                        typed = false
+                        onBlurAfterTyping?.invoke()
+                    }
+                    hadFocus = it.isFocused
+                }
                 .testTag(tag)
                 .semantics {
                     contentDescription = label

@@ -498,6 +498,56 @@ class StreakListViewModelTest {
     }
 
     @Test
+    fun new_draft_starts_with_the_switch_on() = transformTest {
+        val h = harness()
+        settle()
+        h.act(this, StreakListAction.OnNewClick)
+
+        assertThat(h.ready.sheet!!.draft.autoReset).isTrue()
+    }
+
+    @Test
+    fun blur_shows_only_that_fields_error_and_then_checks_live() = transformTest {
+        val h = harness()
+        settle()
+        h.act(this, StreakListAction.OnNewClick)
+        val draft = h.ready.sheet!!.draft
+
+        // Nothing wrong yet: blur shows nothing.
+        h.act(this, StreakListAction.OnFieldBlur(SheetField.START))
+        assertThat(h.ready.sheet!!.validation).isNull()
+
+        h.act(this, StreakListAction.OnDraftChange(draft.copy(startValue = "1.5", goal = "0")))
+        h.act(this, StreakListAction.OnFieldBlur(SheetField.START))
+
+        val sheet = h.ready.sheet!!
+        assertThat(sheet.validation!!.startError).isEqualTo(FieldError.WHOLE_NUMBER)
+        // The goal field was not left yet, so its error stays hidden.
+        assertThat(sheet.validation!!.goalError).isNull()
+        assertThat(h.repo.executed).isEmpty()
+
+        // Shown errors follow the fields from then on.
+        h.act(this, StreakListAction.OnDraftChange(sheet.draft.copy(startValue = "2")))
+        assertThat(h.ready.sheet!!.validation!!.startError).isNull()
+        assertThat(h.ready.sheet!!.validation!!.goalError).isEqualTo(FieldError.GOAL_ZERO)
+    }
+
+    @Test
+    fun blur_on_the_goal_shows_the_goal_error_only() = transformTest {
+        val h = harness()
+        settle()
+        h.act(this, StreakListAction.OnNewClick)
+        val draft = h.ready.sheet!!.draft
+
+        h.act(this, StreakListAction.OnDraftChange(draft.copy(startValue = "x", goal = "abc")))
+        h.act(this, StreakListAction.OnFieldBlur(SheetField.GOAL))
+
+        val validation = h.ready.sheet!!.validation!!
+        assertThat(validation.startError).isNull()
+        assertThat(validation.goalError).isEqualTo(FieldError.GOAL_NOT_NUMBER)
+    }
+
+    @Test
     fun save_new_draft_creates_streak_with_normalized_name() = transformTest {
         val h = harness()
         settle()

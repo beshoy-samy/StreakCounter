@@ -21,6 +21,12 @@ sealed interface StreakListAction {
     data object OnNewClick : StreakListAction
     data class OnDraftChange(val draft: StreakDraft) : StreakListAction
     data object OnSave : StreakListAction
+
+    /**
+     * A sheet field lost focus after the user typed in it: validates that field and shows its T1
+     * error (spec 4.4, "on blur and on save"). Once any error shows, edits re-check live.
+     */
+    data class OnFieldBlur(val field: SheetField) : StreakListAction
     data object OnSheetDismiss : StreakListAction
     data object OnKeepEditing : StreakListAction
     data object OnDiscard : StreakListAction
@@ -42,3 +48,6 @@ sealed interface StreakListAction {
     /** "Try again" on the can't-open screen: reads the file again. */
     data object OnRetryOpen : StreakListAction
 }
+
+/** The sheet fields that validate on blur. */
+enum class SheetField { START, GOAL }

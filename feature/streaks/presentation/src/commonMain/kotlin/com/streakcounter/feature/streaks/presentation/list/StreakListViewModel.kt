@@ -124,6 +124,7 @@ class StreakListViewModel(
             StreakListAction.OnNewClick -> openSheet(NEW_DRAFT)
             is StreakListAction.OnDraftChange -> changeDraft(action.draft)
             StreakListAction.OnSave -> save()
+            is StreakListAction.OnFieldBlur -> blur(action.field)
             StreakListAction.OnSheetDismiss -> {
                 val draft = session.draft.value ?: return
                 if (draft.touched) showDiscard = true else closeSheet()
@@ -357,6 +358,17 @@ class StreakListViewModel(
         if (validation != null) validation = next.validate()
     }
 
+    private fun blur(field: SheetField) {
+        // Once errors are showing, every change re-checks them (changeDraft); nothing to add.
+        if (validation != null) return
+        val result = session.draft.value?.validate() ?: return
+        // A field that is fine shows nothing (and does not switch on live checks of the others).
+        validation = when (field) {
+            SheetField.START -> result.startError?.let { DraftValidation(startError = it, goalError = null) }
+            SheetField.GOAL -> result.goalError?.let { DraftValidation(startError = null, goalError = it) }
+        }
+    }
+
     private fun save() {
         val draft = session.draft.value ?: return
         val result = draft.validate()
@@ -431,7 +443,8 @@ class StreakListViewModel(
             type = StreakType.CHECK_IN,
             startValue = "0",
             goal = "",
-            autoReset = false,
+            // R19: a new Check-in or Times starts with its switch on.
+            autoReset = true,
             goalEdited = false,
             touched = false,
         )
