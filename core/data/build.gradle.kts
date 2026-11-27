@@ -1,5 +1,7 @@
+import java.time.Duration
 import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeSimulatorTest
 import org.jetbrains.kotlin.gradle.tasks.KotlinNativeLink
+import org.jetbrains.kotlin.konan.target.HostManager
 
 plugins {
     alias(libs.plugins.convention.kmp.library)
@@ -51,6 +53,12 @@ val iosSimulatorTest = tasks.named<KotlinNativeSimulatorTest>("iosSimulatorArm64
 val iosSimulatorKeychainTest = tasks.register<Exec>("iosSimulatorKeychainTest") {
     group = "verification"
     description = "Runs the real-Keychain iOS tests inside a simulator app bundle."
+    // Needs Xcode tools: on other hosts KGP skips the iOS link, so there is nothing to run.
+    onlyIf { HostManager.hostIsMac }
+    // KGP's simulator test boots and shuts down the same device: never overlap with it.
+    mustRunAfter(iosSimulatorTest)
+    // simctl launch blocks until the app exits; a hung test must not hang the build.
+    timeout.set(Duration.ofMinutes(5))
     val link = tasks.named<KotlinNativeLink>("linkDebugTestIosSimulatorArm64")
     dependsOn(link)
     // Plain values and providers only, so the configuration cache can store the task.

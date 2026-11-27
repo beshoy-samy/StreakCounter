@@ -32,7 +32,7 @@ cat > "$APP/Info.plist" <<PLIST
 <key>LSRequiresIPhoneOS</key><true/>
 </dict></plist>
 PLIST
-codesign --force --sign - "$APP" >/dev/null 2>&1
+codesign --force --sign - "$APP" >/dev/null
 
 BOOTED_HERE=false
 if ! xcrun simctl list devices booted | grep -q "$DEVICE ("; then
