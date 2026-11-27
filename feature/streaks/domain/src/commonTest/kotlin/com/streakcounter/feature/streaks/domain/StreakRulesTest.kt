@@ -258,4 +258,40 @@ class StreakRulesTest {
         assertThat(t.valueOn(today)).isEqualTo(0)
         assertThat(t.normalize(today).valueOn(today)).isEqualTo(0)
     }
+
+    @Test
+    fun checkIn_ended_boundary_two_days_ago_ends_with_note() {
+        val n = checkIn(8, LocalDate(2026, 11, 25)).normalize(today)
+        assertThat(n.valueOn(today)).isEqualTo(0)
+        assertThat(n.endedNote).isEqualTo(EndedNote(LocalDate(2026, 11, 26), 8))
+    }
+
+    @Test
+    fun normalize_is_idempotent_after_ended_write() {
+        val n = checkIn(8, LocalDate(2026, 11, 25)).normalize(today)
+        assertThat(n.normalize(today)).isEqualTo(n)
+    }
+
+    @Test
+    fun daysSince_increment_from_future_start_moves_to_yesterday() {
+        val s = streak(StreakType.DAYS_SINCE, startDate = LocalDate(2026, 12, 1)).increment(today)
+        assertThat(s.startDate).isEqualTo(yesterday)
+        assertThat(s.valueOn(today)).isEqualTo(1)
+    }
+
+    @Test
+    fun times_future_countDate_is_not_destroyed_by_normalize() {
+        val future = LocalDate(2026, 11, 28)
+        val n = times(7, future, autoReset = true).normalize(today)
+        assertThat(n.count).isEqualTo(7)
+        assertThat(n.countDate).isEqualTo(future)
+        assertThat(n.valueOn(today)).isEqualTo(0)
+    }
+
+    @Test
+    fun times_past_countDate_is_zeroed_by_normalize() {
+        val n = times(7, yesterday, autoReset = true).normalize(today)
+        assertThat(n.count).isEqualTo(0)
+        assertThat(n.countDate).isEqualTo(today)
+    }
 }

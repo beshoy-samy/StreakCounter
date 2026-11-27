@@ -14,6 +14,10 @@ private fun LocalDate.dayAfter() = plus(1, DateTimeUnit.DAY)
 private fun Streak.hasEnded(today: LocalDate): Boolean =
     type == StreakType.CHECK_IN && autoReset && lastCheckIn != null && lastCheckIn < today.dayBefore()
 
+/** A slip starts a fresh run, so a total goal may be reached and celebrated again. Daily marks are per day and stay. */
+private fun Streak.withFreshGoalRun(): Streak =
+    if (isDailyGoal()) this else copy(goalReachedOn = null, celebrated = null)
+
 private fun Streak.isStaleTimes(today: LocalDate): Boolean =
     type == StreakType.TIMES && autoReset && countDate != today
 
@@ -41,9 +45,9 @@ fun Streak.normalize(today: LocalDate): Streak {
             count = 0,
             lastCheckIn = null,
             endedNote = EndedNote(s.lastCheckIn!!.dayAfter(), s.count),
-        )
+        ).withFreshGoalRun()
     }
-    if (s.isStaleTimes(today)) {
+    if (s.isStaleTimes(today) && (s.countDate?.let { it < today } ?: true)) {
         s = s.copy(count = 0, countDate = today)
     }
     val goal = s.goal
@@ -90,7 +94,8 @@ fun Streak.decrement(today: LocalDate): Streak = when (type) {
 }
 
 fun Streak.reset(today: LocalDate): Streak = when (type) {
-    StreakType.CHECK_IN -> copy(count = 0, lastCheckIn = null, endedNote = null)
-    StreakType.DAYS_SINCE -> copy(startDate = today, endedNote = null)
-    StreakType.TIMES -> copy(count = 0, countDate = if (autoReset) today else countDate, endedNote = null)
+    StreakType.CHECK_IN -> copy(count = 0, lastCheckIn = null, endedNote = null).withFreshGoalRun()
+    StreakType.DAYS_SINCE -> copy(startDate = today, endedNote = null).withFreshGoalRun()
+    StreakType.TIMES ->
+        copy(count = 0, countDate = if (autoReset) today else countDate, endedNote = null).withFreshGoalRun()
 }
