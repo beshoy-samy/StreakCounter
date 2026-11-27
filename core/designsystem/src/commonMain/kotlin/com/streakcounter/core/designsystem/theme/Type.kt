@@ -2,11 +2,14 @@ package com.streakcounter.core.designsystem.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.TextStyle
 import org.jetbrains.compose.resources.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 import streakcounter.core.designsystem.generated.resources.Res
@@ -24,6 +27,15 @@ fun rememberReadexProFamily(): FontFamily {
     val bold = Font(Res.font.readex_pro_bold, FontWeight.Bold)
     return remember(regular, medium, semiBold, bold) { FontFamily(regular, medium, semiBold, bold) }
 }
+
+/**
+ * [ltr] letter spacing, or none in RTL: negative tracking pulls Arabic letters apart at their
+ * joins. For one-off sizes outside the typography (the celebration number).
+ */
+@Composable
+@ReadOnlyComposable
+fun tracking(ltr: TextUnit): TextUnit =
+    if (LocalLayoutDirection.current == LayoutDirection.Rtl) 0.sp else ltr
 
 /** Tabular figures so counters do not jitter while they change. */
 const val TabularFigures = "tnum"
@@ -50,10 +62,12 @@ private fun style(
  * body -> bodyLarge, body-sm -> bodyMedium, label -> labelLarge, caption -> labelMedium.
  * Remaining M3 slots reuse the nearest token so no baseline Roboto/M3 style leaks in.
  * The display (counter) and label styles use tabular figures.
+ * [rtl] drops the negative tracking of display and headline (it breaks Arabic joining).
  */
-fun streakTypography(family: FontFamily): Typography {
-    val display = style(family, 56, 56, FontWeight.Bold, (-1.5).sp, TabularFigures)
-    val headline = style(family, 30, 36, FontWeight.Bold, (-0.5).sp)
+fun streakTypography(family: FontFamily, rtl: Boolean = false): Typography {
+    fun tight(ltr: TextUnit) = if (rtl) 0.sp else ltr
+    val display = style(family, 56, 56, FontWeight.Bold, tight((-1.5).sp), TabularFigures)
+    val headline = style(family, 30, 36, FontWeight.Bold, tight((-0.5).sp))
     val title = style(family, 18, 24, FontWeight.SemiBold)
     val titleSm = style(family, 16, 22, FontWeight.SemiBold)
     val body = style(family, 16, 24, FontWeight.Normal)

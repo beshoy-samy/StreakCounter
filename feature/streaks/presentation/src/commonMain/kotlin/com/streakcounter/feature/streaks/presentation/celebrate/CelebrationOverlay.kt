@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.streakcounter.core.designsystem.theme.ControlSize
 import com.streakcounter.core.designsystem.theme.Spacing
+import com.streakcounter.core.designsystem.theme.tracking
 import com.streakcounter.feature.streaks.domain.StreakType
 import com.streakcounter.core.presentation.format.formatCount
 import com.streakcounter.feature.streaks.presentation.list.CelebrationUi
@@ -136,7 +137,7 @@ fun CelebrationOverlay(
                         style = MaterialTheme.typography.displayLarge.copy(
                             fontSize = 88.sp,
                             lineHeight = 88.sp,
-                            letterSpacing = (-3).sp,
+                            letterSpacing = tracking((-3).sp),
                         ),
                     )
                     Text(

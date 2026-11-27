@@ -9,8 +9,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 
 /** Roles from tokens.json that have no M3 slot. */
 @Immutable
@@ -108,7 +111,9 @@ fun StreakTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
-    val typography = streakTypography(rememberReadexProFamily())
+    val family = rememberReadexProFamily()
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val typography = remember(family, rtl) { streakTypography(family, rtl) }
     CompositionLocalProvider(LocalStreakColors provides if (darkTheme) DarkStreakColors else LightStreakColors) {
         MaterialTheme(
             colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme,

@@ -300,7 +300,7 @@ private fun ListHeader(today: LocalDate?, onReorder: (() -> Unit)? = null) {
             }
             Text(
                 text = stringResource(Res.string.list_title),
-                style = MaterialTheme.typography.headlineLarge.copy(fontSize = 34.sp, lineHeight = 40.sp, letterSpacing = 0.sp),
+                style = MaterialTheme.typography.headlineLarge.copy(fontSize = 34.sp, lineHeight = 40.sp),
                 color = MaterialTheme.colorScheme.onBackground,
             )
         }
