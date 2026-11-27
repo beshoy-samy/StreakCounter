@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Header -->
+    <string name="list_title">Your streaks</string>
+    <string name="reorder_streaks">Reorder streaks</string>
+    <plurals name="summary_check_ins_left">
+        <item quantity="one">One check-in left today. You’ve got this.</item>
+        <item quantity="other">%1$s check-ins left today. You’ve got this.</item>
+    </plurals>
+    <string name="summary_all_done">All checked in today. Nice and steady.</string>
+    <string name="summary_welcome_back">Welcome back. Pick up where it feels right.</string>
+    <string name="saving_stuck">Changes aren’t being saved. Free up some storage.</string>
+    <string name="new_streak">New streak</string>
+
+    <!-- Card: type names, unnamed names, subtitles -->
+    <string name="type_check_in">Check-in</string>
+    <string name="type_days_since">Days since</string>
+    <string name="type_times">Times</string>
+    <string name="unnamed_check_in">Check-in streak</string>
+    <string name="unnamed_days_since">Days-since streak</string>
+    <string name="unnamed_times">Count</string>
+    <string name="subtitle">%1$s · %2$s</string>
+    <string name="detail_progress">%1$s of %2$s, %3$s to go</string>
+    <string name="detail_progress_today">%1$s of %2$s, %3$s more today</string>
+    <string name="detail_goal_reached">goal %1$s reached</string>
+    <string name="detail_done_today">done today</string>
+    <string name="detail_not_yet_today">not yet today</string>
+    <string name="detail_since">since %1$s</string>
+    <string name="detail_resets_at_midnight">resets at midnight</string>
+    <string name="detail_running_total">running total</string>
+    <plurals name="unit_days">
+        <item quantity="one">day</item>
+        <item quantity="other">days</item>
+    </plurals>
+    <plurals name="unit_times">
+        <item quantity="one">time</item>
+        <item quantity="other">times</item>
+    </plurals>
+    <string name="unit_today">today</string>
+    <plurals name="ended_note">
+        <item quantity="one">Ended %1$s after %2$s day. A new streak starts with your next check-in.</item>
+        <item quantity="other">Ended %1$s after %2$s days. A new streak starts with your next check-in.</item>
+    </plurals>
+
+    <!-- Card: buttons and their spoken labels -->
+    <string name="card_edit">Edit %1$s</string>
+    <string name="card_reset">Reset %1$s</string>
+    <string name="card_take_one">Take one from %1$s</string>
+    <string name="card_check_in_label">Check in</string>
+    <string name="card_check_in">Check in %1$s</string>
+    <string name="card_done_label">Done</string>
+    <string name="card_done">Checked in today. Tap to undo.</string>
+    <string name="card_add_day">Add a day to %1$s</string>
+    <string name="card_add_label">Add</string>
+    <string name="card_add">Add %1$s</string>
+    <string name="swipe_delete">Delete</string>
+
+    <!-- Card: custom accessibility actions -->
+    <string name="action_check_in">Check in</string>
+    <string name="action_undo_check_in">Undo check-in</string>
+    <string name="action_add_day">Add a day</string>
+    <string name="action_add">Add</string>
+    <string name="action_take_one">Take one</string>
+    <string name="action_reset">Reset</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_move_up">Move up</string>
+    <string name="action_move_down">Move down</string>
+    <string name="action_reorder">Reorder</string>
+
+    <!-- Snackbars (T3) -->
+    <string name="snackbar_reset">%1$s reset to 0</string>
+    <string name="snackbar_deleted">Deleted ‘%1$s’</string>
+    <string name="snackbar_undo">Undo</string>
+    <string name="snackbar_save_failed">Couldn’t save that change.</string>
+    <string name="try_again">Try again</string>
+
+    <!-- Empty -->
+    <string name="empty_title">Start your first streak</string>
+    <string name="empty_body">Count gym days, days without smoking or glasses of water. One tap a day keeps it going.</string>
+
+    <!-- Opening -->
+    <string name="opening">Opening your streaks</string>
+
+    <!-- Can't open (T5) and Start fresh (T6) -->
+    <string name="unreadable_title">Couldn’t open your streaks</string>
+    <string name="unreadable_body">The saved file can’t be read on this phone. This happens after restoring a backup onto a new phone, because the key stays on the old one.</string>
+    <string name="start_fresh">Start fresh</string>
+    <string name="start_fresh_title">Start fresh?</string>
+    <string name="start_fresh_body">This deletes the saved file that can’t be opened. Every streak in it is lost and you can’t get them back.</string>
+    <string name="start_fresh_body_key">The key that protects your streaks on this phone can’t be used. Starting fresh deletes them, and they can’t be recovered.</string>
+    <string name="keep_file">Keep file</string>
+    <string name="delete_and_start_fresh">Delete and start fresh</string>
+
+    <!-- Reorder -->
+    <string name="reorder_title">Drag to reorder</string>
+    <string name="reorder_done">Done</string>
+</resources>

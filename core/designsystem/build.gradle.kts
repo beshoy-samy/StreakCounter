@@ -22,3 +22,8 @@ kotlin {
         }
     }
 }
+
+// Feature modules use the shared icons (Res.drawable.ic_*) and fonts.
+compose.resources {
+    publicResClass = true
+}

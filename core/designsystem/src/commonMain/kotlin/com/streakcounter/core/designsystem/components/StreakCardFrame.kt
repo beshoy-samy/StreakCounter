@@ -1,7 +1,8 @@
 package com.streakcounter.core.designsystem.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -21,21 +22,30 @@ import com.streakcounter.core.designsystem.theme.StreakTheme
  * Streak card: xl-radius `surfaceContainer` surface, 20 dp padding, whole card clickable
  * ([onClickLabel] is announced, e.g. "Edit Gym"). Buttons inside [content] sit above the card click
  * and handle their own taps. [progress] draws the outline goal ring (track + progress, 3 dp);
- * `null` draws none.
+ * `null` draws none. [onLongClick] (optional) is announced with [onLongClickLabel].
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun StreakCardFrame(
     progress: Float?,
     onClick: () -> Unit,
     onClickLabel: String,
     modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
+    onLongClickLabel: String? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Box(
         modifier
             .clip(MaterialTheme.shapes.extraLarge)
             .background(MaterialTheme.colorScheme.surfaceContainer)
-            .clickable(onClickLabel = onClickLabel, role = Role.Button, onClick = onClick),
+            .combinedClickable(
+                onClickLabel = onClickLabel,
+                role = Role.Button,
+                onLongClickLabel = onLongClickLabel,
+                onLongClick = onLongClick,
+                onClick = onClick,
+            ),
     ) {
         // The card is not a Surface, so provide the content color text and icons default to.
         CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
