@@ -93,5 +93,5 @@ Notes:
 
 ## Repo conventions
 - Git identity for this repo is set locally (`Beshoy Samy <beshoy.samy411@gmail.com>`). Don't change it.
-- Work happens on feature branches. `spec/streak-counter` holds the initial build.
+- `main` is the only long-lived branch. Do new work on a feature branch off `main`.
 - `.superpowers/` is git-ignored scratch (brainstorm companion, SDD workspaces).
