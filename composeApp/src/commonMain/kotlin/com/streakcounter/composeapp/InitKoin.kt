@@ -2,6 +2,7 @@ package com.streakcounter.composeapp
 
 import com.streakcounter.core.data.di.coreDataModule
 import com.streakcounter.feature.streaks.data.di.streaksDataModule
+import com.streakcounter.feature.streaks.presentation.di.streaksPresentationModule
 import org.koin.core.context.startKoin
 import org.koin.mp.KoinPlatformTools
 import org.koin.dsl.KoinAppDeclaration
@@ -17,6 +18,7 @@ fun initKoin(config: KoinAppDeclaration? = null) {
         modules(
             coreDataModule,
             streaksDataModule,
+            streaksPresentationModule,
         )
     }
 }

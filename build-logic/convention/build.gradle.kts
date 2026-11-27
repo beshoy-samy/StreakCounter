@@ -9,6 +9,7 @@ dependencies {
     compileOnly(libs.kotlin.gradlePlugin)
     compileOnly(libs.compose.compiler.gradlePlugin)
     compileOnly(libs.compose.multiplatform.gradlePlugin)
+    compileOnly(libs.cryptography.gradlePlugin)
 }
 
 gradlePlugin {

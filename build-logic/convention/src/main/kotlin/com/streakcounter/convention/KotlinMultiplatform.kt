@@ -23,7 +23,13 @@ internal fun Project.configureKotlinMultiplatform() {
 
             // Host (JVM) tests: commonTest + androidHostTest. Android resources are included so Robolectric
             // based Compose UI tests can load Compose Multiplatform resources (fonts, drawables).
-            withHostTest { isIncludeAndroidResources = true }
+            withHostTest {
+                isIncludeAndroidResources = true
+                // Plain JVM host tests run against stubbed android.jar classes. The Compose runtime
+                // (also under AppState `transform` in ViewModel tests) calls android.os.Trace, which
+                // would throw "not mocked"; return defaults instead. Robolectric tests are unaffected.
+                isReturnDefaultValues = true
+            }
             // Device tests: commonTest + androidDeviceTest
             withDeviceTest {
                 instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

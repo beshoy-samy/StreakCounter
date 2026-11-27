@@ -52,6 +52,7 @@ android-gradlePlugin = { module = "com.android.tools.build:gradle", version.ref 
 kotlin-gradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 compose-compiler-gradlePlugin = { module = "org.jetbrains.kotlin:compose-compiler-gradle-plugin", version.ref = "kotlin" }
 compose-multiplatform-gradlePlugin = { module = "org.jetbrains.compose:compose-gradle-plugin", version.ref = "composeMultiplatform" }
+cryptography-gradlePlugin = { module = "dev.whyoleg.cryptography:cryptography-gradle-plugin", version.ref = "cryptography" }
 
 # Kotlin
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -127,6 +128,8 @@ kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref 
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
+# Resolves the active Xcode Swift libs path for the CryptoKit provider (its klib hard-codes /Applications/Xcode.app).
+cryptography = { id = "dev.whyoleg.cryptography", version.ref = "cryptography" }
 
 convention-kmp-library = { id = "com.streakcounter.convention.kmp.library", version = "unspecified" }
 convention-cmp-library = { id = "com.streakcounter.convention.cmp.library", version = "unspecified" }
