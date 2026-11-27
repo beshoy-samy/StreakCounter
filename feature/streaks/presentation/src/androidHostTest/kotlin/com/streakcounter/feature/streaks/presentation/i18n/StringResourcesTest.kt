@@ -64,4 +64,38 @@ class StringResourcesTest {
             assertThat(items.keys, "ar $key").containsExactlyInAnyOrder(*arabic.toTypedArray())
         }
     }
+
+    /**
+     * Keys whose German or Arabic text may equal the English one: only templates made of
+     * placeholders, plus words that are the same in German. Anything else must be translated.
+     */
+    private val sameAsEnglish: Map<String, Set<String>> = mapOf(
+        "de" to setOf(
+            "subtitle", "celebrate_heading", "celebrate_amount", "detail_since", // placeholder-only templates
+            "type_check_in", "card_check_in_label", // "Check-in" is the German word too
+            "field_name", "field_name_optional", // "Name", "Name (optional)"
+        ),
+        "ar" to setOf("subtitle", "celebrate_heading", "celebrate_amount", "detail_since"),
+    )
+
+    @Test
+    fun noEnglishLeftInTranslations() {
+        others.forEach { (tag, entries) ->
+            val allowed = sameAsEnglish.getValue(tag)
+            en.strings.forEach { (key, text) ->
+                if (key !in allowed) assertThat(entries.strings.getValue(key) != text, "$tag $key is still English").isEqualTo(true)
+            }
+            en.plurals.forEach { (key, items) ->
+                items.forEach { (quantity, text) ->
+                    if (key !in allowed && tag == "de") {
+                        val translated = entries.plurals.getValue(key).getValue(quantity)
+                        assertThat(translated != text, "$tag $key/$quantity is still English").isEqualTo(true)
+                    }
+                    if (key !in allowed && tag == "ar") {
+                        assertThat(entries.plurals.getValue(key).values.none { it == text }, "$tag $key is still English").isEqualTo(true)
+                    }
+                }
+            }
+        }
+    }
 }

@@ -63,4 +63,27 @@ class NumberFormatTest : LocaleTestBase() {
         assertThat(formatDate(today, DateSkeleton.HEADER, "de")).isEqualTo("Freitag, 27. November")
         assertThat(formatDate(today, DateSkeleton.HEADER, "ar").filter { it.isDigit() }).isEqualTo("٢٧")
     }
+
+    @Test
+    fun region_tagged_arabic_date_is_gregorian_with_arabic_indic_digits() {
+        // ar-SA's own calendar is Hijri; LocalDate is ISO, so both platforms show Gregorian.
+        val text = formatShortDate(LocalDate(2023, 7, 3), today, "ar-SA")
+        assertThat(text.filter { it.isDigit() }).isEqualTo("٣٢٠٢٣")
+        assertThat(text.contains("يوليو")).isEqualTo(true)
+    }
+
+    @Test
+    fun region_tagged_german_groups_thousands_with_the_regional_separator() {
+        val text = formatCount(1234, "de-AT")
+        assertThat(text.filter { it.isDigit() }).isEqualTo("1234")
+        assertThat(text.contains(',')).isEqualTo(false)
+        assertThat(text).isEqualTo("1\u00A0234")
+    }
+
+    @Test
+    fun explicit_latin_numbering_keeps_latin_digits_in_arabic() {
+        assertThat(formatCount(12, "ar-u-nu-latn")).isEqualTo("12")
+        assertThat(formatShortDate(LocalDate(2023, 7, 3), today, "ar-u-nu-latn").filter { it.isDigit() })
+            .isEqualTo("32023")
+    }
 }

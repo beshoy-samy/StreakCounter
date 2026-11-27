@@ -34,7 +34,7 @@ private fun <K, V> AtomicReference<Map<K, V>>.getOrPut(key: K, create: () -> V):
  */
 private fun localeOf(tag: String): NSLocale {
     val arabic = tag.substringBefore('@').split('-', '_').first() == "ar"
-    return NSLocale(localeIdentifier = if (arabic && "numbers=" !in tag) "$tag${if ('@' in tag) ";" else "@"}numbers=arab" else tag)
+    return NSLocale(localeIdentifier = if (arabic && "numbers=" !in tag && "-u-" !in tag) "$tag${if ('@' in tag) ";" else "@"}numbers=arab" else tag)
 }
 
 internal actual fun currentLanguageTag(): String = NSLocale.currentLocale.localeIdentifier
@@ -62,6 +62,8 @@ internal actual fun formatDate(date: LocalDate, skeleton: String, languageTag: S
     val formatter = dateFormatters.getOrPut(languageTag to skeleton) {
         NSDateFormatter().apply {
             locale = localeOf(languageTag)
+            // Always Gregorian, like Android: ar-SA would otherwise show Hijri dates on iOS only.
+            calendar = NSCalendar(calendarIdentifier = NSCalendarIdentifierGregorian)
             setLocalizedDateFormatFromTemplate(skeleton)
         }
     }
