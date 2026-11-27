@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- inverse-surface, light (neutral.800): the deep plum of the launcher icon. -->
+    <color name="ic_launcher_background">#FF35292B</color>
+</resources>

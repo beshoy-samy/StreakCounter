@@ -23,6 +23,7 @@ dependencies {
     implementation(libs.koin.android)
 
     testImplementation(projects.core.testing)
+    testImplementation(projects.feature.streaks.data)
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
     testImplementation(libs.glance.appwidget.testing)

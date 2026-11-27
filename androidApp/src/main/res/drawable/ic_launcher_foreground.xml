@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Launcher artwork from docs/design (Shell & brand, Launcher icon): the card outline from the goal
+    progress, 78 % drawn from the top start, clockwise, with a check. Inside the 66 dp safe zone.
+    Colour = inverse-primary (light, ember.300).
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M43,33 H65 A16,16 0 0 1 81,49 V59 A16,16 0 0 1 65,75 H43 A16,16 0 0 1 27,59 V49 A16,16 0 0 1 43,33 Z"
+        android:strokeColor="#FFFF9F7A"
+        android:strokeAlpha="0.3"
+        android:strokeWidth="9"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M43,33 H65 A16,16 0 0 1 81,49 V59 A16,16 0 0 1 65,75 H43 A16,16 0 0 1 27,59 V49 A16,16 0 0 1 43,33 Z"
+        android:strokeColor="#FFFF9F7A"
+        android:strokeWidth="9"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:trimPathEnd="0.78" />
+    <path
+        android:pathData="M42,54 l8,8 l16,-16"
+        android:strokeColor="#FFFF9F7A"
+        android:strokeWidth="9"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>
