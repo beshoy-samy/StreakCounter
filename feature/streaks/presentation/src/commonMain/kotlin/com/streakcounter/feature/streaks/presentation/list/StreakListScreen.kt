@@ -54,6 +54,13 @@ import com.streakcounter.core.designsystem.theme.StreakTheme
 import com.streakcounter.feature.streaks.presentation.format.DateSkeleton
 import com.streakcounter.feature.streaks.presentation.format.formatDate
 import com.streakcounter.feature.streaks.presentation.format.formatNumber
+import com.streakcounter.feature.streaks.domain.CelebrationSize
+import com.streakcounter.feature.streaks.domain.StreakType
+import com.streakcounter.feature.streaks.presentation.celebrate.CelebrationOverlay
+import com.streakcounter.feature.streaks.presentation.celebrate.SmallBurst
+import com.streakcounter.feature.streaks.presentation.celebrate.rememberReducedMotion
+import com.streakcounter.feature.streaks.presentation.list.components.unnamedName
+import kotlin.uuid.Uuid
 import com.streakcounter.feature.streaks.presentation.list.components.EmptyState
 import com.streakcounter.feature.streaks.presentation.list.components.OpeningSkeleton
 import com.streakcounter.feature.streaks.presentation.list.components.ReorderTopBar
@@ -75,6 +82,7 @@ import streakcounter.feature.streaks.presentation.generated.resources.list_title
 import streakcounter.feature.streaks.presentation.generated.resources.new_streak
 import streakcounter.feature.streaks.presentation.generated.resources.reorder_streaks
 import streakcounter.feature.streaks.presentation.generated.resources.saving_stuck
+import streakcounter.feature.streaks.presentation.generated.resources.snackbar_daily_goal
 import streakcounter.feature.streaks.presentation.generated.resources.snackbar_deleted
 import streakcounter.feature.streaks.presentation.generated.resources.snackbar_reset
 import streakcounter.feature.streaks.presentation.generated.resources.snackbar_save_failed
@@ -100,48 +108,60 @@ fun StreakListScreen(
     val ready = state as? StreakListState.Ready
     val reorderMode = ready?.reorderMode == true
     val showFab = ready != null && ready.cards.isNotEmpty() && !reorderMode
+    val reducedMotion = rememberReducedMotion()
+    val burstId = ready?.celebration?.takeIf { it.size == CelebrationSize.SMALL }?.streakId
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        topBar = { if (reorderMode) ReorderTopBar(onDone = { onAction(StreakListAction.OnReorderDone) }) },
-        snackbarHost = { SnackbarHost(snackbarHost) },
-        floatingActionButton = {
-            if (showFab) NewStreakFab(onClick = { onAction(StreakListAction.OnNewClick) })
-        },
-    ) { padding ->
-        when (state) {
-            StreakListState.Opening -> ScrollableState(padding, today, centered = false) {
-                Spacer(Modifier.height(Spacing.s4))
-                OpeningSkeleton()
-            }
-            is StreakListState.Unreadable -> ScrollableState(padding, today) {
-                UnreadableState(
-                    error = state.error,
-                    canStartFresh = state.canStartFresh,
-                    onRetry = { onAction(StreakListAction.OnRetryOpen) },
-                    onStartFreshConfirm = { onAction(StreakListAction.OnStartFreshConfirm) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-            is StreakListState.Ready -> if (state.cards.isEmpty() && !state.reorderMode) {
-                ScrollableState(padding, today) {
-                    EmptyState(
-                        onNewClick = { onAction(StreakListAction.OnNewClick) },
+    Box(Modifier.fillMaxSize()) {
+        Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
+            topBar = { if (reorderMode) ReorderTopBar(onDone = { onAction(StreakListAction.OnReorderDone) }) },
+            snackbarHost = { SnackbarHost(snackbarHost) },
+            floatingActionButton = {
+                if (showFab) NewStreakFab(onClick = { onAction(StreakListAction.OnNewClick) })
+            },
+        ) { padding ->
+            when (state) {
+                StreakListState.Opening -> ScrollableState(padding, today, centered = false) {
+                    Spacer(Modifier.height(Spacing.s4))
+                    OpeningSkeleton()
+                }
+                is StreakListState.Unreadable -> ScrollableState(padding, today) {
+                    UnreadableState(
+                        error = state.error,
+                        canStartFresh = state.canStartFresh,
+                        onRetry = { onAction(StreakListAction.OnRetryOpen) },
+                        onStartFreshConfirm = { onAction(StreakListAction.OnStartFreshConfirm) },
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
-            } else {
-                StreakList(state, today, onAction, padding)
+                is StreakListState.Ready -> if (state.cards.isEmpty() && !state.reorderMode) {
+                    ScrollableState(padding, today) {
+                        EmptyState(
+                            onNewClick = { onAction(StreakListAction.OnNewClick) },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                } else {
+                    StreakList(state, today, onAction, padding, burstId, reducedMotion)
+                }
             }
         }
+
+        SnackbarEffect(ready, snackbarHost, onAction)
+        DailyGoalEffect(ready, snackbarHost, onAction)
+
+        ready?.sheet?.let { StreakSheet(it, onAction) }
+
+        // The big celebration covers the list; the small one is a burst on the card plus a snackbar.
+        ready?.celebration?.takeIf { it.size == CelebrationSize.BIG }?.let {
+            CelebrationOverlay(
+                ui = it,
+                reducedMotion = reducedMotion,
+                onKeepGoing = { onAction(StreakListAction.OnCelebrationDismiss) },
+                onSetNewGoal = { onAction(StreakListAction.OnSetNewGoal) },
+            )
+        }
     }
-
-    SnackbarEffect(ready, snackbarHost, onAction)
-
-    ready?.sheet?.let { StreakSheet(it, onAction) }
-
-    // Task 11 renders the celebration overlay (and the daily-goal snackbar) here from
-    // `ready.celebration` / `ready.dailyGoalHit`.
 }
 
 /**
@@ -184,6 +204,8 @@ private fun StreakList(
     today: LocalDate?,
     onAction: (StreakListAction) -> Unit,
     padding: PaddingValues,
+    burstId: Uuid?,
+    reducedMotion: Boolean,
 ) {
     val currentOnAction by rememberUpdatedState(onAction)
     val reorderMode by rememberUpdatedState(state.reorderMode)
@@ -238,6 +260,11 @@ private fun StreakList(
                     ) {
                         StreakCard(card = card, today = today, index = index, count = cards.size, onAction = onAction)
                     }
+                    SmallBurst(
+                        visible = card.id == burstId,
+                        reducedMotion = reducedMotion,
+                        modifier = Modifier.matchParentSize(),
+                    )
                 }
             }
         }
@@ -387,6 +414,33 @@ private fun SnackbarEffect(
                 },
             )
         }
+    }
+}
+
+/**
+ * The snackbar for a SMALL celebration ("Water: 8 today. That’s your goal."). It queues behind any
+ * other snackbar; once it closes the celebration is reported as seen (OnCelebrationDismiss), which
+ * is also what ends the burst.
+ */
+@Composable
+private fun DailyGoalEffect(
+    ready: StreakListState.Ready?,
+    host: SnackbarHostState,
+    onAction: (StreakListAction) -> Unit,
+) {
+    val currentOnAction by rememberUpdatedState(onAction)
+    val hit = ready?.dailyGoalHit
+    val message = hit?.let {
+        stringResource(
+            Res.string.snackbar_daily_goal,
+            it.name ?: stringResource(unnamedName(ready.cards.firstOrNull { c -> c.id == it.streakId }?.type ?: StreakType.TIMES)),
+            formatNumber(it.value),
+        )
+    }
+    LaunchedEffect(hit?.streakId, hit?.value) {
+        message ?: return@LaunchedEffect
+        host.showSnackbar(message = message, duration = SnackbarDuration.Short)
+        currentOnAction(StreakListAction.OnCelebrationDismiss)
     }
 }
 

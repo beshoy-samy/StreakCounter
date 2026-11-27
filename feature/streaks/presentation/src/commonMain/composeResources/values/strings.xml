@@ -75,6 +75,14 @@
     <string name="snackbar_save_failed">Couldn’t save that change.</string>
     <string name="try_again">Try again</string>
 
+    <!-- Celebrations -->
+    <string name="celebrate_heading">%1$s · %2$s</string>
+    <string name="celebrate_amount">%1$s %2$s</string>
+    <string name="celebrate_body">The count keeps going from here.</string>
+    <string name="celebrate_keep_going">Keep going</string>
+    <string name="celebrate_set_new_goal">Set a new goal</string>
+    <string name="snackbar_daily_goal">%1$s: %2$s today. That’s your goal.</string>
+
     <!-- Empty -->
     <string name="empty_title">Start your first streak</string>
     <string name="empty_body">Count gym days, days without smoking or glasses of water. One tap a day keeps it going.</string>

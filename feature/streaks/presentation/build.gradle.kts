@@ -13,6 +13,8 @@ kotlin {
             implementation(libs.kotlinx.datetime)
             // AdaptiveBottomSheet: Material sheet on Android, native sheet on iOS.
             implementation(libs.calf.ui)
+            // Lottie player for the goal celebrations.
+            implementation(libs.compottie)
         }
         commonTest.dependencies {
             implementation(projects.core.testing)

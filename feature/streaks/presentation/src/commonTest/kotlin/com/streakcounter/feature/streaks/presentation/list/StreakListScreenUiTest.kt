@@ -20,6 +20,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.swipeRight
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import com.streakcounter.feature.streaks.domain.CelebrationSize
 import com.streakcounter.feature.streaks.domain.EndedNote
 import com.streakcounter.feature.streaks.presentation.list.components.LiftedKey
 import com.streakcounter.feature.streaks.presentation.list.components.handleTag
@@ -85,16 +86,18 @@ class StreakListScreenUiTest : UiTestBase() {
         cards: List<StreakCardUi> = listOf(card()),
         undo: UndoUi? = null,
         summary: ListSummary = ListSummary.None,
+        celebration: CelebrationUi? = null,
+        dailyGoalHit: DailyGoalUi? = null,
     ) = StreakListState.Ready(
         cards = cards,
         checkInsLeft = cards.count { it.type == StreakType.CHECK_IN && !it.doneToday },
         hasCheckIns = cards.any { it.type == StreakType.CHECK_IN },
         undo = undo,
         saveFailed = false,
-        celebration = null,
+        celebration = celebration,
         sheet = null,
         reorderMode = false,
-        dailyGoalHit = null,
+        dailyGoalHit = dailyGoalHit,
         savingStuck = false,
         summary = summary,
         failedWrites = 0,
@@ -140,6 +143,37 @@ class StreakListScreenUiTest : UiTestBase() {
         onNodeWithText("Undo").performClick()
         waitForIdle()
         assertEquals(StreakListAction.OnUndo, actions.last())
+    }
+
+    @Test
+    fun big_celebration_overlay_actions_go_to_the_view_model() = runComposeUiTest {
+        val actions = mutableListOf<StreakListAction>()
+        val big = CelebrationUi(gymId, CelebrationSize.BIG, 30, "Gym", StreakType.CHECK_IN)
+        setContent { Screen(ready(celebration = big), actions) }
+
+        onNodeWithText("Gym · 30 days").assertExists()
+        onNodeWithText("Keep going").performClick()
+        onNodeWithText("Set a new goal").performClick()
+
+        assertEquals(listOf(StreakListAction.OnCelebrationDismiss, StreakListAction.OnSetNewGoal), actions)
+    }
+
+    @Test
+    fun small_celebration_shows_the_daily_goal_snackbar_then_dismisses() = runComposeUiTest {
+        val actions = mutableListOf<StreakListAction>()
+        val small = CelebrationUi(gymId, CelebrationSize.SMALL, 8, "Glasses of water", StreakType.TIMES)
+        setContent {
+            Screen(ready(celebration = small, dailyGoalHit = DailyGoalUi(gymId, "Glasses of water", 8)), actions)
+        }
+
+        waitForIdle()
+        onNodeWithText("Glasses of water: 8 today. That’s your goal.").assertExists()
+        // No overlay for the small one.
+        onNodeWithText("Keep going").assertDoesNotExist()
+
+        mainClock.advanceTimeBy(6_000)
+        waitForIdle()
+        assertEquals(listOf<StreakListAction>(StreakListAction.OnCelebrationDismiss), actions)
     }
 
     @Test
