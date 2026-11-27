@@ -24,25 +24,49 @@ data class DraftValidation(val startError: FieldError?, val goalError: FieldErro
 
 fun normalizeName(raw: String): String? = raw.trim().ifEmpty { null }
 
-private fun String.isDigits() = isNotEmpty() && all { it in '0'..'9' }
+/**
+ * [this] with Arabic-Indic (U+0660..0669) and Extended Arabic-Indic (U+06F0..06F9) digits turned
+ * into ASCII, or null when it is empty or has anything but digits. Digits of different systems
+ * may be mixed ("1٢" is 12), because a keyboard can switch between them mid-number.
+ */
+fun String.asciiDigitsOrNull(): String? {
+    if (isEmpty()) return null
+    return buildString(length) {
+        for (c in this@asciiDigitsOrNull) {
+            append(
+                when (c) {
+                    in '0'..'9' -> c
+                    in '\u0660'..'\u0669' -> '0' + (c - '\u0660')
+                    in '\u06F0'..'\u06F9' -> '0' + (c - '\u06F0')
+                    else -> return null
+                },
+            )
+        }
+    }
+}
+
+/** The whole number typed in any digit system (surrounding spaces ignored), or null. */
+fun String.toCountOrNull(): Int? = trim().asciiDigitsOrNull()?.toIntOrNull()
 
 /** Digits only, so "99999999999999" reads as over the limit rather than not a number. */
 private fun String.overMax() = trimStart('0').let { it.length > 5 || (it.toIntOrNull() ?: 0) > MAX_VALUE }
 
 fun StreakDraft.validate(): DraftValidation {
-    val start = startValue.trim()
+    val raw = startValue.trim()
+    val start = raw.asciiDigitsOrNull()
     val startError = when {
-        start.isEmpty() -> FieldError.ENTER_NUMBER
-        !start.isDigits() -> FieldError.WHOLE_NUMBER
+        raw.isEmpty() -> FieldError.ENTER_NUMBER
+        start == null -> FieldError.WHOLE_NUMBER
         start.overMax() -> FieldError.OVER_MAX
         else -> null
     }
-    val startNumber = if (startError == null) start.toInt() else null
+    val startNumber = if (startError == null) start?.toInt() else null
 
-    val g = goal.trim()
+    val rawGoal = goal.trim()
+    val g = rawGoal.asciiDigitsOrNull()
     val goalError = when {
-        g.isEmpty() -> null
-        !g.isDigits() -> FieldError.GOAL_NOT_NUMBER
+        rawGoal.isEmpty() -> null
+        g == null -> FieldError.GOAL_NOT_NUMBER
         g.overMax() -> FieldError.OVER_MAX
         g.toInt() == 0 -> FieldError.GOAL_ZERO
         goalEdited && !(type == StreakType.TIMES && autoReset) &&

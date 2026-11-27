@@ -46,7 +46,7 @@ import androidx.compose.ui.unit.sp
 import com.streakcounter.core.designsystem.theme.ControlSize
 import com.streakcounter.core.designsystem.theme.Spacing
 import com.streakcounter.feature.streaks.domain.StreakType
-import com.streakcounter.feature.streaks.presentation.format.formatNumber
+import com.streakcounter.core.presentation.format.formatCount
 import com.streakcounter.feature.streaks.presentation.list.CelebrationUi
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
@@ -76,7 +76,7 @@ fun CelebrationOverlay(
     onKeepGoing: () -> Unit,
     onSetNewGoal: () -> Unit,
 ) {
-    val value = formatNumber(ui.value)
+    val value = formatCount(ui.value)
     val unit = if (ui.type == StreakType.TIMES) {
         pluralStringResource(Res.plurals.unit_times, ui.value)
     } else {

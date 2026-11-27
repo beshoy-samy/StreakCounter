@@ -32,7 +32,7 @@ import com.streakcounter.core.designsystem.components.StreakCardFrame
 import com.streakcounter.core.designsystem.theme.ControlSize
 import com.streakcounter.core.designsystem.theme.Spacing
 import com.streakcounter.feature.streaks.domain.StreakType
-import com.streakcounter.feature.streaks.presentation.format.formatNumber
+import com.streakcounter.core.presentation.format.formatCount
 import com.streakcounter.feature.streaks.presentation.list.StreakCardUi
 import com.streakcounter.feature.streaks.presentation.list.StreakListAction
 import kotlinx.datetime.LocalDate
@@ -145,7 +145,7 @@ internal fun StreakCard(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.s2),
             ) {
                 Text(
-                    text = formatNumber(card.value),
+                    text = formatCount(card.value),
                     style = MaterialTheme.typography.displayLarge,
                     color = if (card.type == StreakType.CHECK_IN) {
                         MaterialTheme.colorScheme.primary

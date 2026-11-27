@@ -3,9 +3,8 @@ package com.streakcounter.feature.streaks.presentation.list.components
 import androidx.compose.runtime.Composable
 import com.streakcounter.feature.streaks.domain.EndedNote
 import com.streakcounter.feature.streaks.domain.StreakType
-import com.streakcounter.feature.streaks.presentation.format.DateSkeleton
-import com.streakcounter.feature.streaks.presentation.format.formatDate
-import com.streakcounter.feature.streaks.presentation.format.formatNumber
+import com.streakcounter.core.presentation.format.formatShortDate
+import com.streakcounter.core.presentation.format.formatCount
 import com.streakcounter.feature.streaks.presentation.list.StreakCardUi
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.StringResource
@@ -55,17 +54,17 @@ internal fun StreakCardUi.subtitle(today: LocalDate?): String {
     )
     val dailyGoal = type == StreakType.TIMES && autoReset
     val detail = when {
-        goal != null && goalReached -> stringResource(Res.string.detail_goal_reached, formatNumber(goal))
+        goal != null && goalReached -> stringResource(Res.string.detail_goal_reached, formatCount(goal))
         goal != null -> stringResource(
             if (dailyGoal) Res.string.detail_progress_today else Res.string.detail_progress,
-            formatNumber(value),
-            formatNumber(goal),
-            formatNumber(goal - value),
+            formatCount(value),
+            formatCount(goal),
+            formatCount(goal - value),
         )
         type == StreakType.CHECK_IN ->
             stringResource(if (doneToday) Res.string.detail_done_today else Res.string.detail_not_yet_today)
         type == StreakType.DAYS_SINCE && startDate != null ->
-            stringResource(Res.string.detail_since, shortDate(startDate, today))
+            stringResource(Res.string.detail_since, formatShortDate(startDate, today))
         type == StreakType.TIMES && autoReset -> stringResource(Res.string.detail_resets_at_midnight)
         type == StreakType.TIMES -> stringResource(Res.string.detail_running_total)
         else -> null
@@ -86,12 +85,6 @@ internal fun StreakCardUi.unit(): String = when {
 internal fun EndedNote.text(today: LocalDate?): String = pluralStringResource(
     Res.plurals.ended_note,
     previousCount,
-    shortDate(endedOn, today),
-    formatNumber(previousCount),
-)
-
-/** "11 Oct" in the current year, "3 Jul 2023" otherwise (or when today is unknown, without year). */
-internal fun shortDate(date: LocalDate, today: LocalDate?): String = formatDate(
-    date,
-    if (today == null || date.year == today.year) DateSkeleton.DAY_MONTH else DateSkeleton.DAY_MONTH_YEAR,
+    formatShortDate(endedOn, today),
+    formatCount(previousCount),
 )

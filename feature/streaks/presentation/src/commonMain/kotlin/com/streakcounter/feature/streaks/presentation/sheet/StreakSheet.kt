@@ -68,10 +68,11 @@ import com.streakcounter.feature.streaks.domain.FieldError
 import com.streakcounter.feature.streaks.domain.MAX_VALUE
 import com.streakcounter.feature.streaks.domain.StreakDraft
 import com.streakcounter.feature.streaks.domain.StreakType
+import com.streakcounter.feature.streaks.domain.toCountOrNull
 import com.streakcounter.feature.streaks.domain.validate
-import com.streakcounter.feature.streaks.presentation.format.DateSkeleton
-import com.streakcounter.feature.streaks.presentation.format.formatDate
-import com.streakcounter.feature.streaks.presentation.format.formatNumber
+import com.streakcounter.core.presentation.format.DateSkeleton
+import com.streakcounter.core.presentation.format.formatDate
+import com.streakcounter.core.presentation.format.formatCount
 import com.streakcounter.feature.streaks.presentation.list.SheetField
 import com.streakcounter.feature.streaks.presentation.list.SheetUi
 import com.streakcounter.feature.streaks.presentation.list.StreakListAction
@@ -612,9 +613,9 @@ private fun startLabel(type: StreakType, isEdit: Boolean): StringResource = when
 private fun goalHelper(draft: StreakDraft, sheet: SheetUi, dailyGoal: Boolean): String? {
     if (sheet.isEdit) {
         if (sheet.goalReachedOn != null) return null
-        val goal = draft.goal.trim().toIntOrNull() ?: return null
-        val count = draft.startValue.trim().toIntOrNull() ?: return null
-        return if (goal > count) stringResource(Res.string.goal_to_go, formatNumber(goal - count)) else null
+        val goal = draft.goal.toCountOrNull() ?: return null
+        val count = draft.startValue.toCountOrNull() ?: return null
+        return if (goal > count) stringResource(Res.string.goal_to_go, formatCount(goal - count)) else null
     }
     return when {
         dailyGoal -> stringResource(Res.string.goal_helper_per_day)
@@ -625,13 +626,13 @@ private fun goalHelper(draft: StreakDraft, sheet: SheetUi, dailyGoal: Boolean): 
 }
 
 /** The whole-number part of what is typed in the count field, for "Make it more than 12". */
-private fun countText(raw: String): String = formatNumber(raw.trim().takeWhile { it in '0'..'9' }.toIntOrNull() ?: 0)
+private fun countText(raw: String): String = formatCount(raw.trim().takeWhile { it.isDigit() }.toCountOrNull() ?: 0)
 
 @Composable
 private fun fieldErrorText(error: FieldError, count: String): String = when (error) {
     FieldError.ENTER_NUMBER -> stringResource(Res.string.error_enter_number)
     FieldError.WHOLE_NUMBER -> stringResource(Res.string.error_whole_number)
-    FieldError.OVER_MAX -> stringResource(Res.string.error_over_max, formatNumber(MAX_VALUE))
+    FieldError.OVER_MAX -> stringResource(Res.string.error_over_max, formatCount(MAX_VALUE))
     FieldError.GOAL_NOT_ABOVE_COUNT -> stringResource(Res.string.error_goal_not_above_count, count)
     FieldError.GOAL_ZERO -> stringResource(Res.string.error_goal_zero)
     FieldError.GOAL_NOT_NUMBER -> stringResource(Res.string.error_goal_not_number)

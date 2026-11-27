@@ -46,7 +46,7 @@ import androidx.compose.ui.zIndex
 import com.streakcounter.core.designsystem.theme.ControlSize
 import com.streakcounter.core.designsystem.theme.Spacing
 import com.streakcounter.feature.streaks.domain.StreakType
-import com.streakcounter.feature.streaks.presentation.format.formatNumber
+import com.streakcounter.core.presentation.format.formatCount
 import com.streakcounter.feature.streaks.presentation.list.StreakCardUi
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.stringResource
@@ -284,7 +284,7 @@ internal fun ReorderRow(
             )
         }
         Text(
-            text = formatNumber(card.value),
+            text = formatCount(card.value),
             style = MaterialTheme.typography.displayLarge.copy(fontSize = 28.sp, lineHeight = 32.sp, letterSpacing = 0.sp),
             color = if (card.type == StreakType.CHECK_IN) {
                 MaterialTheme.colorScheme.primary

@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Header -->
+    <string name="list_title">سلاسلك</string>
+    <string name="reorder_streaks">إعادة ترتيب السلاسل</string>
+    <plurals name="summary_check_ins_left">
+        <item quantity="zero">باقي %1$s تسجيل اليوم. تقدر عليها.</item>
+        <item quantity="one">باقي تسجيل واحد اليوم. تقدر عليها.</item>
+        <item quantity="two">باقي تسجيلان اليوم. تقدر عليها.</item>
+        <item quantity="few">باقي %1$s تسجيلات اليوم. تقدر عليها.</item>
+        <item quantity="many">باقي %1$s تسجيلًا اليوم. تقدر عليها.</item>
+        <item quantity="other">باقي %1$s تسجيل اليوم. تقدر عليها.</item>
+    </plurals>
+    <string name="summary_all_done">سجّلت كل شيء اليوم. بوتيرة هادئة وثابتة.</string>
+    <string name="summary_welcome_back">أهلًا بعودتك. أكمل من حيث يناسبك.</string>
+    <string name="summary_day">اليوم %1$s. واصل.</string>
+    <string name="saving_stuck">لا يتم حفظ التغييرات. أفرغ بعض المساحة على الهاتف.</string>
+    <string name="new_streak">سلسلة جديدة</string>
+
+    <!-- Card: type names, unnamed names, subtitles -->
+    <string name="type_check_in">تسجيل يومي</string>
+    <string name="type_days_since">أيام منذ</string>
+    <string name="type_times">عدد</string>
+    <string name="unnamed_check_in">سلسلة تسجيل يومي</string>
+    <string name="unnamed_days_since">سلسلة أيام منذ</string>
+    <string name="unnamed_times">عدّاد</string>
+    <string name="subtitle">%1$s · %2$s</string>
+    <string name="detail_progress">%1$s من %2$s، باقي %3$s</string>
+    <string name="detail_progress_today">%1$s من %2$s، باقي %3$s اليوم</string>
+    <string name="detail_goal_reached">تم بلوغ الهدف %1$s</string>
+    <string name="detail_done_today">تم اليوم</string>
+    <string name="detail_not_yet_today">لم يتم اليوم</string>
+    <string name="detail_since">%1$s</string>
+    <string name="detail_resets_at_midnight">يُعاد الضبط عند منتصف الليل</string>
+    <string name="detail_running_total">المجموع الكلي</string>
+    <plurals name="unit_days">
+        <item quantity="zero">يوم</item>
+        <item quantity="one">يوم</item>
+        <item quantity="two">يومان</item>
+        <item quantity="few">أيام</item>
+        <item quantity="many">يومًا</item>
+        <item quantity="other">يوم</item>
+    </plurals>
+    <plurals name="unit_times">
+        <item quantity="zero">مرة</item>
+        <item quantity="one">مرة</item>
+        <item quantity="two">مرتان</item>
+        <item quantity="few">مرات</item>
+        <item quantity="many">مرة</item>
+        <item quantity="other">مرة</item>
+    </plurals>
+    <string name="unit_today">اليوم</string>
+    <plurals name="ended_note">
+        <item quantity="zero">انتهت في %1$s بعد %2$s يوم. تبدأ سلسلة جديدة مع تسجيلك التالي.</item>
+        <item quantity="one">انتهت في %1$s بعد يوم واحد. تبدأ سلسلة جديدة مع تسجيلك التالي.</item>
+        <item quantity="two">انتهت في %1$s بعد يومين. تبدأ سلسلة جديدة مع تسجيلك التالي.</item>
+        <item quantity="few">انتهت في %1$s بعد %2$s أيام. تبدأ سلسلة جديدة مع تسجيلك التالي.</item>
+        <item quantity="many">انتهت في %1$s بعد %2$s يومًا. تبدأ سلسلة جديدة مع تسجيلك التالي.</item>
+        <item quantity="other">انتهت في %1$s بعد %2$s يوم. تبدأ سلسلة جديدة مع تسجيلك التالي.</item>
+    </plurals>
+
+    <!-- Card: buttons and their spoken labels -->
+    <string name="card_edit">تعديل %1$s</string>
+    <string name="card_reset">إعادة ضبط %1$s</string>
+    <string name="card_take_one">إنقاص %1$s</string>
+    <string name="card_check_in_label">تسجيل</string>
+    <string name="card_check_in">تسجيل %1$s</string>
+    <string name="card_done_label">تم</string>
+    <string name="card_done">تم التسجيل اليوم. اضغط للتراجع.</string>
+    <string name="card_add_day">إضافة يوم إلى %1$s</string>
+    <string name="card_add_label">إضافة</string>
+    <string name="card_add">إضافة %1$s</string>
+    <string name="swipe_delete">حذف</string>
+
+    <!-- Card: custom accessibility actions -->
+    <string name="action_check_in">تسجيل</string>
+    <string name="action_undo_check_in">التراجع عن التسجيل</string>
+    <string name="action_add_day">إضافة يوم</string>
+    <string name="action_add">إضافة</string>
+    <string name="action_take_one">إنقاص واحد</string>
+    <string name="action_reset">إعادة ضبط</string>
+    <string name="action_delete">حذف</string>
+    <string name="action_move_up">نقل لأعلى</string>
+    <string name="action_move_down">نقل لأسفل</string>
+    <string name="action_reorder">إعادة ترتيب</string>
+
+    <!-- Snackbars (T3) -->
+    <string name="snackbar_reset">تمت إعادة ضبط %1$s إلى ٠</string>
+    <string name="snackbar_deleted">تم حذف «%1$s»</string>
+    <string name="snackbar_undo">تراجع</string>
+    <string name="snackbar_save_failed">تعذّر حفظ هذا التغيير.</string>
+    <string name="try_again">حاول مرة أخرى</string>
+
+    <!-- Celebrations -->
+    <string name="celebrate_heading">%1$s · %2$s</string>
+    <string name="celebrate_amount">%1$s %2$s</string>
+    <string name="celebrate_body">يستمر العدّ من هنا.</string>
+    <string name="celebrate_keep_going">واصل</string>
+    <string name="celebrate_set_new_goal">حدّد هدفًا جديدًا</string>
+    <string name="snackbar_daily_goal">%1$s: %2$s اليوم. هذا هدفك.</string>
+
+    <!-- Empty -->
+    <string name="empty_title">ابدأ سلسلتك الأولى</string>
+    <string name="empty_body">عُدّ أيام النادي، أو الأيام بلا تدخين، أو أكواب الماء. ضغطة واحدة كل يوم تُبقيها مستمرة.</string>
+
+    <!-- Opening -->
+    <string name="opening">جارٍ فتح سلاسلك</string>
+
+    <!-- Can't open (T5) and Start fresh (T6) -->
+    <string name="unreadable_title">تعذّر فتح سلاسلك</string>
+    <string name="unreadable_body">لا يمكن قراءة الملف المحفوظ على هذا الهاتف. يحدث هذا عند استعادة نسخة احتياطية على هاتف جديد، لأن المفتاح يبقى على الهاتف القديم.</string>
+    <string name="start_fresh">ابدأ من جديد</string>
+    <string name="start_fresh_title">البدء من جديد؟</string>
+    <string name="start_fresh_body">سيؤدي هذا إلى حذف الملف المحفوظ الذي لا يمكن فتحه. ستضيع كل السلاسل التي فيه ولا يمكن استرجاعها.</string>
+    <string name="start_fresh_body_key">لا يمكن استخدام المفتاح الذي يحمي سلاسلك على هذا الهاتف. البدء من جديد يحذفها ولا يمكن استرجاعها.</string>
+    <string name="keep_file">أبقِ الملف</string>
+    <string name="delete_and_start_fresh">احذف وابدأ من جديد</string>
+
+    <!-- Reorder -->
+    <string name="reorder_title">اسحب لإعادة الترتيب</string>
+    <string name="reorder_done">تم</string>
+
+    <!-- Create / edit sheet -->
+    <string name="sheet_edit_title">تعديل السلسلة</string>
+    <string name="sheet_close">إغلاق</string>
+    <string name="field_name">الاسم</string>
+    <string name="field_name_optional">الاسم (اختياري)</string>
+    <string name="field_name_placeholder">مثل: النادي، قراءة ٢٠ صفحة</string>
+    <string name="field_type">النوع</string>
+    <string name="start_check_in">الأيام المنجزة سابقًا</string>
+    <string name="start_days_since">بدأت منذ كم يومًا</string>
+    <string name="start_days_since_helper">٠ تعني اليوم</string>
+    <string name="start_times">ابدأ من</string>
+    <string name="start_edit_count">العدد الحالي</string>
+    <string name="start_edit_days_so_far">الأيام حتى الآن</string>
+    <string name="goal_label">الهدف (اختياري)</string>
+    <string name="goal_label_daily">الهدف اليومي (اختياري)</string>
+    <string name="goal_placeholder">مثل: ٣٠</string>
+    <string name="goal_helper_check_in">أيام متتالية</string>
+    <string name="goal_helper_days">أيام</string>
+    <string name="goal_helper_per_day">في اليوم</string>
+    <string name="goal_to_go">باقي %1$s</string>
+    <string name="goal_reached_hint">تم بلوغ الهدف في %1$s. اكتب رقمًا أكبر لهدف جديد.</string>
+    <string name="locked_type">النوع: %1$s. لا يمكن تغييره بعد الإنشاء.</string>
+    <string name="callout_since_title">يُحتسب تلقائيًا</string>
+    <string name="callout_since_body">يزيد بمقدار واحد كل يوم. اضغط إعادة الضبط إذا انقطعت.</string>
+    <string name="switch_break_title">اقطع السلسلة إذا فاتني يوم</string>
+    <string name="switch_break_body">يعود إلى ٠ بعد يوم كامل بلا تسجيل</string>
+    <string name="switch_midnight_title">إعادة الضبط عند منتصف الليل</string>
+    <string name="switch_midnight_body">يبدأ من ٠ من جديد كل يوم</string>
+    <string name="sheet_save_new">حفظ السلسلة</string>
+    <string name="sheet_save_edit">حفظ التغييرات</string>
+    <string name="sheet_delete">حذف السلسلة</string>
+
+    <!-- Field errors (T1) -->
+    <string name="error_enter_number">أدخل رقمًا</string>
+    <string name="error_whole_number">استخدم رقمًا صحيحًا</string>
+    <string name="error_over_max">استخدم %1$s أو أقل</string>
+    <string name="error_goal_not_above_count">اجعله أكبر من %1$s</string>
+    <string name="error_goal_zero">استخدم ١ أو أكثر</string>
+    <string name="error_goal_not_number">أدخل رقمًا، أو اتركه فارغًا</string>
+
+    <!-- Discard (T6) -->
+    <string name="discard_title">تجاهل هذه السلسلة؟</string>
+    <string name="discard_body">أدخلت بعض التفاصيل. الإغلاق الآن يمحوها.</string>
+    <string name="keep_editing">تابع التعديل</string>
+    <string name="discard">تجاهل</string>
+</resources>

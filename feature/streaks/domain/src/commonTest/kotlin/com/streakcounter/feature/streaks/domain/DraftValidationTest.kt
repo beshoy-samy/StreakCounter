@@ -82,4 +82,33 @@ class DraftValidationTest {
         assertThat(normalizeName("قراءة ٢٠ صفحة")).isEqualTo("قراءة ٢٠ صفحة")
         assertThat(normalizeName("💧 Water")).isEqualTo("💧 Water")
     }
+
+    @Test
+    fun arabic_indic_digits_are_numbers() {
+        assertThat("١٢".toCountOrNull()).isEqualTo(12)
+        assertThat("۱۲".toCountOrNull()).isEqualTo(12)
+        assertThat("12".toCountOrNull()).isEqualTo(12)
+        assertThat(" ٠ ".toCountOrNull()).isEqualTo(0)
+        assertThat("".toCountOrNull()).isNull()
+        assertThat("١٢.٥".toCountOrNull()).isNull()
+        assertThat("-١".toCountOrNull()).isNull()
+        assertThat("٩٩٩٩٩٩٩٩٩٩٩٩٩٩".toCountOrNull()).isNull()
+    }
+
+    @Test
+    fun mixed_digit_systems_are_accepted() {
+        assertThat("1٢".toCountOrNull()).isEqualTo(12)
+        assertThat("١2۳".toCountOrNull()).isEqualTo(123)
+    }
+
+    @Test
+    fun validate_accepts_and_limits_arabic_indic_digits() {
+        assertThat(draft(start = "١٢", goal = "٣٠").validate().isValid).isTrue()
+        assertThat(draft(start = "۱۲", goal = "۳۰").validate().isValid).isTrue()
+        assertThat(draft(start = "١٠٠٠٠٠").validate().startError).isEqualTo(FieldError.OVER_MAX)
+        assertThat(draft(start = "٩٩٩٩٩٩٩٩٩٩٩٩٩٩").validate().startError).isEqualTo(FieldError.OVER_MAX)
+        assertThat(draft(start = "٠", goal = "٠").validate().goalError).isEqualTo(FieldError.GOAL_ZERO)
+        assertThat(draft(start = "١٢", goal = "١٠").validate().goalError).isEqualTo(FieldError.GOAL_NOT_ABOVE_COUNT)
+        assertThat(draft(start = "١٢x").validate().startError).isEqualTo(FieldError.WHOLE_NUMBER)
+    }
 }

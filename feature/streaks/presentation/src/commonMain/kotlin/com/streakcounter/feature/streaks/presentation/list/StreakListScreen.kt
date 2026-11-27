@@ -53,9 +53,9 @@ import androidx.compose.ui.unit.sp
 import com.streakcounter.core.designsystem.theme.ControlSize
 import com.streakcounter.core.designsystem.theme.Spacing
 import com.streakcounter.core.designsystem.theme.StreakTheme
-import com.streakcounter.feature.streaks.presentation.format.DateSkeleton
-import com.streakcounter.feature.streaks.presentation.format.formatDate
-import com.streakcounter.feature.streaks.presentation.format.formatNumber
+import com.streakcounter.core.presentation.format.DateSkeleton
+import com.streakcounter.core.presentation.format.formatDate
+import com.streakcounter.core.presentation.format.formatCount
 import com.streakcounter.feature.streaks.domain.CelebrationSize
 import com.streakcounter.feature.streaks.domain.StreakType
 import com.streakcounter.feature.streaks.presentation.celebrate.CelebrationOverlay
@@ -300,7 +300,7 @@ private fun ListHeader(today: LocalDate?, onReorder: (() -> Unit)? = null) {
             }
             Text(
                 text = stringResource(Res.string.list_title),
-                style = MaterialTheme.typography.headlineLarge.copy(fontSize = 34.sp, lineHeight = 40.sp),
+                style = MaterialTheme.typography.headlineLarge.copy(fontSize = 34.sp, lineHeight = 40.sp, letterSpacing = 0.sp),
                 color = MaterialTheme.colorScheme.onBackground,
             )
         }
@@ -321,11 +321,11 @@ private fun ListHeader(today: LocalDate?, onReorder: (() -> Unit)? = null) {
 @Composable
 private fun summaryText(summary: ListSummary): String? = when (summary) {
     ListSummary.None -> null
-    is ListSummary.Day -> stringResource(Res.string.summary_day, formatNumber(summary.day))
+    is ListSummary.Day -> stringResource(Res.string.summary_day, formatCount(summary.day))
     ListSummary.WelcomeBack -> stringResource(Res.string.summary_welcome_back)
     ListSummary.AllCheckedIn -> stringResource(Res.string.summary_all_done)
     is ListSummary.CheckInsLeft ->
-        pluralStringResource(Res.plurals.summary_check_ins_left, summary.count, formatNumber(summary.count))
+        pluralStringResource(Res.plurals.summary_check_ins_left, summary.count, formatCount(summary.count))
 }
 
 /** T4: repeated save failures are a lasting condition, not a one-off snackbar. */
@@ -444,7 +444,7 @@ private fun SmallCelebrationEffect(
     val message = stringResource(
         Res.string.snackbar_daily_goal,
         streakDisplayName(celebration.name, celebration.type),
-        formatNumber(celebration.value),
+        formatCount(celebration.value),
     )
     LaunchedEffect(celebration.streakId, celebration.value) {
         host.showSnackbar(message = message, duration = SnackbarDuration.Short)

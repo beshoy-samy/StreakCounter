@@ -28,6 +28,7 @@ import com.streakcounter.feature.streaks.domain.isDoneToday
 import com.streakcounter.feature.streaks.domain.normalizeName
 import com.streakcounter.feature.streaks.domain.pendingCelebration
 import com.streakcounter.feature.streaks.domain.progressOn
+import com.streakcounter.feature.streaks.domain.toCountOrNull
 import com.streakcounter.feature.streaks.domain.validate
 import com.streakcounter.feature.streaks.domain.valueOn
 import com.streakcounter.feature.streaks.presentation.session.StreakSession
@@ -383,8 +384,8 @@ class StreakListViewModel(
 
     private fun StreakDraft.toCommand(): StreakCommand {
         val name = normalizeName(name)
-        val count = startValue.trim().toInt()
-        val goal = goal.trim().ifEmpty { null }?.toInt()
+        val count = checkNotNull(startValue.toCountOrNull())
+        val goal = goal.toCountOrNull()
         val autoReset = autoReset && type != StreakType.DAYS_SINCE
         val id = editingId ?: return StreakCommand.Create(NewStreak(name, type, count, goal, autoReset))
         val storedGoal = readyOrNull()?.cards?.firstOrNull { it.id == id }?.goal

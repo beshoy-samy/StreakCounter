@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Header -->
+    <string name="list_title">Deine Serien</string>
+    <string name="reorder_streaks">Serien neu anordnen</string>
+    <plurals name="summary_check_ins_left">
+        <item quantity="one">Noch ein Check-in heute. Du schaffst das.</item>
+        <item quantity="other">Noch %1$s Check-ins heute. Du schaffst das.</item>
+    </plurals>
+    <string name="summary_all_done">Heute alles eingecheckt. Schön gleichmäßig.</string>
+    <string name="summary_welcome_back">Willkommen zurück. Mach da weiter, wo es sich gut anfühlt.</string>
+    <string name="summary_day">Tag %1$s. Bleib dran.</string>
+    <string name="saving_stuck">Änderungen werden nicht gespeichert. Gib etwas Speicherplatz frei.</string>
+    <string name="new_streak">Neue Serie</string>
+
+    <!-- Card: type names, unnamed names, subtitles -->
+    <string name="type_check_in">Check-in</string>
+    <string name="type_days_since">Tage seit</string>
+    <string name="type_times">Anzahl</string>
+    <string name="unnamed_check_in">Check-in-Serie</string>
+    <string name="unnamed_days_since">Tage-seit-Serie</string>
+    <string name="unnamed_times">Zähler</string>
+    <string name="subtitle">%1$s · %2$s</string>
+    <string name="detail_progress">%1$s von %2$s, noch %3$s</string>
+    <string name="detail_progress_today">%1$s von %2$s, noch %3$s heute</string>
+    <string name="detail_goal_reached">Ziel %1$s erreicht</string>
+    <string name="detail_done_today">heute erledigt</string>
+    <string name="detail_not_yet_today">heute noch nicht</string>
+    <string name="detail_since">%1$s</string>
+    <string name="detail_resets_at_midnight">wird um Mitternacht zurückgesetzt</string>
+    <string name="detail_running_total">Gesamtzahl</string>
+    <plurals name="unit_days">
+        <item quantity="one">Tag</item>
+        <item quantity="other">Tage</item>
+    </plurals>
+    <plurals name="unit_times">
+        <item quantity="one">Mal</item>
+        <item quantity="other">Mal</item>
+    </plurals>
+    <string name="unit_today">heute</string>
+    <plurals name="ended_note">
+        <item quantity="one">Am %1$s nach %2$s Tag beendet. Mit deinem nächsten Check-in beginnt eine neue Serie.</item>
+        <item quantity="other">Am %1$s nach %2$s Tagen beendet. Mit deinem nächsten Check-in beginnt eine neue Serie.</item>
+    </plurals>
+
+    <!-- Card: buttons and their spoken labels -->
+    <string name="card_edit">Bearbeiten %1$s</string>
+    <string name="card_reset">Zurücksetzen %1$s</string>
+    <string name="card_take_one">Eins weniger bei %1$s</string>
+    <string name="card_check_in_label">Check-in</string>
+    <string name="card_check_in">Einchecken: %1$s</string>
+    <string name="card_done_label">Erledigt</string>
+    <string name="card_done">Heute eingecheckt. Tippen zum Rückgängigmachen.</string>
+    <string name="card_add_day">Einen Tag hinzufügen: %1$s</string>
+    <string name="card_add_label">Hinzufügen</string>
+    <string name="card_add">Hinzufügen: %1$s</string>
+    <string name="swipe_delete">Löschen</string>
+
+    <!-- Card: custom accessibility actions -->
+    <string name="action_check_in">Einchecken</string>
+    <string name="action_undo_check_in">Check-in rückgängig machen</string>
+    <string name="action_add_day">Einen Tag hinzufügen</string>
+    <string name="action_add">Hinzufügen</string>
+    <string name="action_take_one">Eins weniger</string>
+    <string name="action_reset">Zurücksetzen</string>
+    <string name="action_delete">Löschen</string>
+    <string name="action_move_up">Nach oben</string>
+    <string name="action_move_down">Nach unten</string>
+    <string name="action_reorder">Neu anordnen</string>
+
+    <!-- Snackbars (T3) -->
+    <string name="snackbar_reset">%1$s auf 0 zurückgesetzt</string>
+    <string name="snackbar_deleted">‚%1$s‘ gelöscht</string>
+    <string name="snackbar_undo">Rückgängig</string>
+    <string name="snackbar_save_failed">Die Änderung konnte nicht gespeichert werden.</string>
+    <string name="try_again">Erneut versuchen</string>
+
+    <!-- Celebrations -->
+    <string name="celebrate_heading">%1$s · %2$s</string>
+    <string name="celebrate_amount">%1$s %2$s</string>
+    <string name="celebrate_body">Ab hier zählt es einfach weiter.</string>
+    <string name="celebrate_keep_going">Weitermachen</string>
+    <string name="celebrate_set_new_goal">Neues Ziel setzen</string>
+    <string name="snackbar_daily_goal">%1$s: heute %2$s. Das ist dein Ziel.</string>
+
+    <!-- Empty -->
+    <string name="empty_title">Starte deine erste Serie</string>
+    <string name="empty_body">Zähle Gym-Tage, Tage ohne Rauchen oder Gläser Wasser. Ein Tipp am Tag hält sie am Laufen.</string>
+
+    <!-- Opening -->
+    <string name="opening">Deine Serien werden geöffnet</string>
+
+    <!-- Can't open (T5) and Start fresh (T6) -->
+    <string name="unreadable_title">Deine Serien konnten nicht geöffnet werden</string>
+    <string name="unreadable_body">Die gespeicherte Datei kann auf diesem Handy nicht gelesen werden. Das passiert, wenn ein Backup auf ein neues Handy übertragen wird, weil der Schlüssel auf dem alten bleibt.</string>
+    <string name="start_fresh">Neu anfangen</string>
+    <string name="start_fresh_title">Neu anfangen?</string>
+    <string name="start_fresh_body">Dadurch wird die gespeicherte Datei gelöscht, die nicht geöffnet werden kann. Alle Serien darin gehen verloren und lassen sich nicht wiederherstellen.</string>
+    <string name="start_fresh_body_key">Der Schlüssel, der deine Serien auf diesem Handy schützt, kann nicht verwendet werden. Wenn du neu anfängst, werden sie gelöscht und lassen sich nicht wiederherstellen.</string>
+    <string name="keep_file">Datei behalten</string>
+    <string name="delete_and_start_fresh">Löschen und neu anfangen</string>
+
+    <!-- Reorder -->
+    <string name="reorder_title">Zum Anordnen ziehen</string>
+    <string name="reorder_done">Fertig</string>
+
+    <!-- Create / edit sheet -->
+    <string name="sheet_edit_title">Serie bearbeiten</string>
+    <string name="sheet_close">Schließen</string>
+    <string name="field_name">Name</string>
+    <string name="field_name_optional">Name (optional)</string>
+    <string name="field_name_placeholder">z. B. Gym, 20 Seiten lesen</string>
+    <string name="field_type">Typ</string>
+    <string name="start_check_in">Bereits erledigte Tage</string>
+    <string name="start_days_since">Vor wie vielen Tagen gestartet</string>
+    <string name="start_days_since_helper">0 bedeutet heute</string>
+    <string name="start_times">Start bei</string>
+    <string name="start_edit_count">Aktueller Stand</string>
+    <string name="start_edit_days_so_far">Bisherige Tage</string>
+    <string name="goal_label">Ziel (optional)</string>
+    <string name="goal_label_daily">Tagesziel (optional)</string>
+    <string name="goal_placeholder">z. B. 30</string>
+    <string name="goal_helper_check_in">Tage in Folge</string>
+    <string name="goal_helper_days">Tage</string>
+    <string name="goal_helper_per_day">Pro Tag</string>
+    <string name="goal_to_go">noch %1$s</string>
+    <string name="goal_reached_hint">Ziel am %1$s erreicht. Gib eine größere Zahl für ein neues Ziel ein.</string>
+    <string name="locked_type">Typ: %1$s. Lässt sich nach dem Erstellen nicht ändern.</string>
+    <string name="callout_since_title">Zählt von selbst</string>
+    <string name="callout_since_body">Wächst jeden Tag um eins. Tippe auf Zurücksetzen, wenn du mal ausrutschst.</string>
+    <string name="switch_break_title">Serie unterbrechen, wenn ich einen Tag verpasse</string>
+    <string name="switch_break_body">Zurück auf 0 nach einem ganzen Tag ohne Check-in</string>
+    <string name="switch_midnight_title">Um Mitternacht zurücksetzen</string>
+    <string name="switch_midnight_body">Beginnt jeden Tag wieder bei 0</string>
+    <string name="sheet_save_new">Serie speichern</string>
+    <string name="sheet_save_edit">Änderungen speichern</string>
+    <string name="sheet_delete">Serie löschen</string>
+
+    <!-- Field errors (T1) -->
+    <string name="error_enter_number">Gib eine Zahl ein</string>
+    <string name="error_whole_number">Verwende eine ganze Zahl</string>
+    <string name="error_over_max">Verwende höchstens %1$s</string>
+    <string name="error_goal_not_above_count">Wähle mehr als %1$s</string>
+    <string name="error_goal_zero">Verwende 1 oder mehr</string>
+    <string name="error_goal_not_number">Gib eine Zahl ein oder lass das Feld leer</string>
+
+    <!-- Discard (T6) -->
+    <string name="discard_title">Diese Serie verwerfen?</string>
+    <string name="discard_body">Du hast schon Angaben eingetragen. Wenn du jetzt schließt, gehen sie verloren.</string>
+    <string name="keep_editing">Weiter bearbeiten</string>
+    <string name="discard">Verwerfen</string>
+</resources>
